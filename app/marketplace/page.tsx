@@ -16,7 +16,6 @@ type Event = {
   swappable: boolean;
 };
 
-// Client component that handles state
 function MarketplaceContent() {
   const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
@@ -25,12 +24,10 @@ function MarketplaceContent() {
   const [isClient, setIsClient] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Set client-side flag to avoid hydration issues
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // Fetch REAL swappable events
   const fetchRealEvents = async (showRefresh = false) => {
     try {
       if (showRefresh) {
@@ -40,17 +37,16 @@ function MarketplaceContent() {
       }
       setError(null);
       
-      console.log("🟡 Fetching REAL swappable events from /events/swappable...");
+      console.log("Fetching REAL swappable events from /events/swappable...");
       
-      // Fetch REAL events from the database
       const eventsResponse = await api.get("/events/swappable");
-      console.log("✅ REAL Events received:", eventsResponse.data);
+      console.log("REAL Events received:", eventsResponse.data);
 
       setEvents(eventsResponse.data);
       
     } catch (err: any) {
-      console.error("❌ Error fetching real events:", err);
-      console.error("❌ Error details:", err.response?.data);
+      console.error("Error fetching real events:", err);
+      console.error("Error details:", err.response?.data);
       setError(err.response?.data?.msg || err.message || "Failed to load events");
     } finally {
       setLoading(false);
@@ -58,12 +54,11 @@ function MarketplaceContent() {
     }
   };
 
-  // Debug function to check database
   const debugDatabase = async () => {
     try {
-      console.log("🟡 Debug: Checking all events in database...");
+      console.log("Debug: Checking all events in database...");
       const response = await api.get("/events/debug/all-events");
-      console.log("🔍 Database debug:", response.data);
+      console.log("Database debug:", response.data);
       
       const totalEvents = response.data.totalEvents;
       const swappableEvents = response.data.events.filter((e: any) => e.swappable).length;
@@ -71,7 +66,7 @@ function MarketplaceContent() {
       alert(`Database Debug:\nTotal Events: ${totalEvents}\nSwappable Events: ${swappableEvents}\nCheck console for details.`);
       
     } catch (err) {
-      console.error("❌ Debug failed:", err);
+      console.error("Debug failed:", err);
       alert("Debug failed - check console");
     }
   };
@@ -82,16 +77,13 @@ function MarketplaceContent() {
     }
   }, [isClient]);
 
-  // ✅ FIXED: Navigate to swap request page with correct event ID
   const handleRequestSwap = (event: Event) => {
-    console.log("🟡 Requesting swap for event:", event);
-    console.log("🟡 Event ID:", event._id);
+    console.log("equesting swap for event:", event);
+    console.log("Event ID:", event._id);
     
-    // Navigate to swap request page with the event ID
     router.push(`/swap/request?eventId=${event._id}`);
   };
 
-  // Show loading state during SSR
   if (!isClient) {
     return (
       <ProtectedRoute>
@@ -114,7 +106,6 @@ function MarketplaceContent() {
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="max-w-7xl mx-auto pt-20 px-4">
-          {/* Header Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -139,7 +130,6 @@ function MarketplaceContent() {
             </p>
           </motion.div>
 
-          {/* Stats Cards */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -213,7 +203,6 @@ function MarketplaceContent() {
             </div>
           </motion.div>
 
-          {/* Action Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -261,7 +250,6 @@ function MarketplaceContent() {
             </a>
           </motion.div>
 
-          {/* Error Display */}
           <AnimatePresence>
             {error && (
               <motion.div
@@ -283,7 +271,6 @@ function MarketplaceContent() {
             )}
           </AnimatePresence>
 
-          {/* Events Display */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -388,7 +375,6 @@ function MarketplaceContent() {
   );
 }
 
-// Main component with Suspense
 export default function Marketplace() {
   return (
     <Suspense fallback={

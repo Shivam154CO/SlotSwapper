@@ -1,4 +1,3 @@
-// backend/routes/eventRoutes.js
 import express from "express";
 import {
   addEvent,
@@ -10,7 +9,6 @@ import {
 
 const router = express.Router();
 
-// Test route
 router.get("/test", (req, res) => {
   console.log("/api/events/test route hit!");
   res.json({ 
@@ -20,7 +18,6 @@ router.get("/test", (req, res) => {
   });
 });
 
-// Debug route
 router.get("/debug/all-events", async (req, res) => {
   try {
     const Event = (await import("../models/Event.js")).default;
@@ -41,11 +38,10 @@ router.get("/debug/all-events", async (req, res) => {
   }
 });
 
-// Debug route for testing individual events
 router.get("/debug/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("🔍 Debug event ID:", id);
+    console.log("Debug event ID:", id);
     
     const Event = (await import("../models/Event.js")).default;
     const event = await Event.findById(id).populate("userId", "name email");
@@ -79,11 +75,10 @@ router.get("/debug/:id", async (req, res) => {
   }
 });
 
-// MAIN ROUTES - ORDER MATTERS!
 router.get("/swappable", getSwappableEvents);
 router.get("/user/:userId", getUserEvents);
 router.patch("/toggle/:id", toggleSwappable);
 router.post("/", addEvent);
-router.get("/:id", getEventById); // This should be LAST - keep this line!
+router.get("/:id", getEventById);
 
 export default router;

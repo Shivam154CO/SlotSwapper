@@ -8,22 +8,17 @@ import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Add route debugging
 router.use((req, res, next) => {
-  console.log(`🟢 [swapRequestsRoutes] ${req.method} ${req.path}`);
+  console.log(`[swapRequestsRoutes] ${req.method} ${req.path}`);
   next();
 });
 
-// All routes require authentication
 router.use(auth);
 
-// These routes won't conflict because they're on a different path
 router.get("/incoming", getIncomingRequests);
 router.get("/outgoing", getOutgoingRequests);
-// Add cleanup route
 router.delete("/cleanup-test", cleanupTestRequests);
 
-// Add debug route to see ALL swap requests
 router.get("/debug/all", async (req, res) => {
   try {
     const SwapRequest = (await import("../models/SwapRequest.js")).default;

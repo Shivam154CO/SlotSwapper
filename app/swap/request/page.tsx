@@ -1,4 +1,3 @@
-// app/swap/request/page.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
@@ -17,7 +16,6 @@ interface Event {
   swappable: boolean;
 }
 
-// Helper function to safely access localStorage
 const getStoredToken = () => {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('token');
@@ -49,7 +47,7 @@ export default function SwapRequestPage() {
     if (!isClient) return;
 
     if (!eventId) {
-      console.error('❌ No eventId parameter found in URL');
+      console.error('No eventId parameter found in URL');
       alert('No event specified for swap. Please select an event from the marketplace.');
       router.push('/marketplace');
       return;
@@ -64,9 +62,8 @@ export default function SwapRequestPage() {
       setError('');
       setAuthError(false);
 
-      console.log('🟡 Fetching event details for ID:', eventId);
+      console.log('Fetching event details for ID:', eventId);
       
-      // Check authentication first
       const token = getStoredToken();
       if (!token) {
         setAuthError(true);
@@ -76,11 +73,10 @@ export default function SwapRequestPage() {
       }
 
       const response = await api.get(`/events/${eventId}`);
-      console.log('✅ Event details response:', response.data);
+      console.log('Event details response:', response.data);
       
       if (response.data) {
         setEvent(response.data);
-        // Pre-fill contact email if available
         const userEmail = localStorage.getItem('userEmail');
         if (userEmail) {
           setFormData(prev => ({ ...prev, contactEmail: userEmail }));
@@ -89,7 +85,7 @@ export default function SwapRequestPage() {
         throw new Error('Event not found');
       }
     } catch (error: any) {
-      console.error('❌ Error fetching event details:', error);
+      console.error('Error fetching event details:', error);
       
       if (error.response?.status === 401) {
         setAuthError(true);
@@ -114,7 +110,6 @@ export default function SwapRequestPage() {
       setSubmitting(true);
       setError('');
 
-      // Check authentication
       const token = getStoredToken();
       if (!token) {
         setAuthError(true);
@@ -130,10 +125,10 @@ export default function SwapRequestPage() {
         contactEmail: formData.contactEmail
       };
 
-      console.log('🟡 Submitting swap request:', requestData);
+      console.log('Submitting swap request:', requestData);
       
       const response = await api.post('/swaps', requestData);
-      console.log('✅ Swap request response:', response.data);
+      console.log('Swap request response:', response.data);
       
       if (response.data.success) {
         alert('Swap request sent successfully!');
@@ -142,7 +137,7 @@ export default function SwapRequestPage() {
         setError('Failed to send request: ' + response.data.message);
       }
     } catch (error: any) {
-      console.error('❌ Error submitting swap request:', error);
+      console.error('Error submitting swap request:', error);
       
       if (error.response?.status === 401) {
         setAuthError(true);
@@ -183,7 +178,6 @@ export default function SwapRequestPage() {
     });
   };
 
-  // Show loading state during SSR
   if (!isClient) {
     return (
       <ProtectedRoute>
@@ -244,7 +238,6 @@ export default function SwapRequestPage() {
       
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="max-w-4xl mx-auto pt-20 px-4 pb-12">
-          {/* Header Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -278,7 +271,6 @@ export default function SwapRequestPage() {
             <p className="text-gray-600 text-lg">Submit a request to swap this event with the owner</p>
           </motion.div>
 
-          {/* Authentication Error Banner */}
           {authError && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
@@ -305,7 +297,6 @@ export default function SwapRequestPage() {
             </motion.div>
           )}
 
-          {/* General Error Display */}
           {error && !authError && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
@@ -333,7 +324,6 @@ export default function SwapRequestPage() {
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Event Details Card */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -402,7 +392,6 @@ export default function SwapRequestPage() {
               </div>
             </motion.div>
 
-            {/* Swap Request Form */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -419,7 +408,6 @@ export default function SwapRequestPage() {
                 <p className="text-gray-600 mb-6">Fill out the details below to request a swap</p>
                 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Reason Field */}
                   <div className="space-y-2">
                     <label htmlFor="reason" className="block text-sm font-semibold text-gray-700">
                       Reason for Swap Request *
@@ -438,7 +426,6 @@ export default function SwapRequestPage() {
                     <p className="text-xs text-gray-500">Provide a clear reason to help the owner understand your request</p>
                   </div>
 
-                  {/* Preferred Date & Time */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label htmlFor="preferredDate" className="block text-sm font-semibold text-gray-700">
@@ -482,8 +469,6 @@ export default function SwapRequestPage() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Contact Email */}
                   <div className="space-y-2">
                     <label htmlFor="contactEmail" className="block text-sm font-semibold text-gray-700">
                       Your Email Address *
@@ -507,7 +492,6 @@ export default function SwapRequestPage() {
                     <p className="text-xs text-gray-500">This is where the owner will contact you</p>
                   </div>
 
-                  {/* Submit Buttons */}
                   <div className="flex flex-col sm:flex-row gap-4 justify-end pt-6 border-t border-gray-200">
                     <button
                       type="button"

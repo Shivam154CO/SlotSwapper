@@ -1,4 +1,3 @@
-// app/swap/confirmation/page.tsx
 'use client';
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';

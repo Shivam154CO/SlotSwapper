@@ -11,7 +11,6 @@ const auth = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Find user and add to request
     const user = await User.findById(decoded.id).select("-password");
     
     if (!user) {
@@ -20,11 +19,11 @@ const auth = async (req, res, next) => {
 
     req.user = {
       id: user._id.toString(),
-      email: user.email, // Make sure email is included
+      email: user.email,
       name: user.name
     };
     
-    console.log("🔐 Auth middleware - User authenticated:", {
+    console.log("Auth middleware - User authenticated:", {
       id: req.user.id,
       email: req.user.email,
       name: req.user.name
@@ -32,7 +31,7 @@ const auth = async (req, res, next) => {
     
     next();
   } catch (err) {
-    console.error("❌ Auth middleware error:", err);
+    console.error("Auth middleware error:", err);
     res.status(401).json({ msg: "Token is not valid" });
   }
 };

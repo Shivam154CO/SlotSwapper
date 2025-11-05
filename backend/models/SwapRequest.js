@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
 const swapRequestSchema = new mongoose.Schema({
-  // Required for both simple and complex swaps
   requestedEvent: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Event",
@@ -15,7 +14,7 @@ const swapRequestSchema = new mongoose.Schema({
   requester: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: false // Make it optional for backward compatibility
+    required: false
   },
   status: {
     type: String,
@@ -23,14 +22,12 @@ const swapRequestSchema = new mongoose.Schema({
     default: "pending"
   },
   
-  // Optional for simple swaps
   offeredEvent: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Event",
     required: false
   },
   
-  // Simple form fields
   message: {
     type: String,
     default: ""
@@ -52,7 +49,6 @@ const swapRequestSchema = new mongoose.Schema({
     required: false
   },
   
-  // Track request type
   requestType: {
     type: String,
     enum: ["simple", "complex"],
@@ -62,7 +58,6 @@ const swapRequestSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Add indexes for better performance
 swapRequestSchema.index({ eventOwner: 1, status: 1 });
 swapRequestSchema.index({ requester: 1 });
 swapRequestSchema.index({ contactEmail: 1 });

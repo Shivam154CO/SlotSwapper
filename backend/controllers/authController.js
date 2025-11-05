@@ -1,4 +1,3 @@
-// backend/controllers/authController.js
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -7,11 +6,10 @@ export const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    console.log("🟡 [Signup] Received data:", { name, email, password: password ? "***" : "missing" });
+    console.log("[Signup] Received data:", { name, email, password: password ? "***" : "missing" });
 
-    // Validation
     if (!name || !email || !password) {
-      console.log("❌ [Signup] Missing fields:", { name: !!name, email: !!email, password: !!password });
+      console.log("[Signup] Missing fields:", { name: !!name, email: !!email, password: !!password });
       return res.status(400).json({
         success: false,
         msg: "All fields are required: name, email, password"
@@ -25,7 +23,6 @@ export const signup = async (req, res) => {
       });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({
@@ -34,25 +31,22 @@ export const signup = async (req, res) => {
       });
     }
 
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user
     const user = await User.create({
       name,
       email,
       password: hashedPassword
     });
 
-    // Generate token
     const token = jwt.sign(
       { userId: user._id }, 
       process.env.JWT_SECRET || "fallback_secret",
       { expiresIn: "7d" }
     );
 
-    console.log("✅ [Signup] User created successfully:", user.email);
+    console.log("[Signup] User created successfully:", user.email);
 
     res.status(201).json({
       success: true,
@@ -65,7 +59,7 @@ export const signup = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ [Signup] Server error:", err);
+    console.error("[Signup] Server error:", err);
     res.status(500).json({
       success: false,
       msg: "Server error during signup",
@@ -78,9 +72,8 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log("🟡 [Login] Attempt for email:", email);
+    console.log("[Login] Attempt for email:", email);
 
-    // Validation
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -88,34 +81,31 @@ export const login = async (req, res) => {
       });
     }
 
-    // Find user
     const user = await User.findOne({ email });
     if (!user) {
-      console.log("❌ [Login] User not found:", email);
+      console.log("[Login] User not found:", email);
       return res.status(400).json({
         success: false,
         msg: "Invalid email or password"
       });
     }
 
-    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log("❌ [Login] Invalid password for:", email);
+      console.log("[Login] Invalid password for:", email);
       return res.status(400).json({
         success: false,
         msg: "Invalid email or password"
       });
     }
 
-    // Generate token
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET || "fallback_secret",
       { expiresIn: "7d" }
     );
 
-    console.log("✅ [Login] Successful for:", email);
+    console.log("[Login] Successful for:", email);
 
     res.json({
       success: true,
@@ -128,7 +118,7 @@ export const login = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ [Login] Server error:", err);
+    console.error("[Login] Server error:", err);
     res.status(500).json({
       success: false,
       msg: "Server error during login",

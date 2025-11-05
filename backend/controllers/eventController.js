@@ -1,4 +1,3 @@
-// backend/controllers/eventController.js
 import Event from "../models/Event.js";
 import mongoose from "mongoose";
 
@@ -120,7 +119,6 @@ export const getEventById = async (req, res) => {
       });
     }
     
-    // Format the response similar to getSwappableEvents
     const formattedEvent = {
       _id: event._id,
       title: event.title,

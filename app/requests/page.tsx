@@ -32,7 +32,6 @@ interface Event {
   swappable: boolean;
 }
 
-// Helper function to safely access localStorage
 const getStoredToken = () => {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('token');
@@ -78,51 +77,48 @@ export default function RequestsPage() {
       setLoading(true);
       setError('');
 
-      console.log('🟡 [Frontend] Fetching swap requests...');
+      console.log('[Frontend] Fetching swap requests...');
 
-      // Try to fetch requests - if we get 401, it's okay, we'll show empty state
       try {
         const [incomingRes, outgoingRes] = await Promise.all([
           api.get('/swap-requests/incoming'),
           api.get('/swap-requests/outgoing')
         ]);
 
-        console.log('✅ [Frontend] Incoming response:', incomingRes.data);
-        console.log('✅ [Frontend] Outgoing response:', outgoingRes.data);
+        console.log('[Frontend] Incoming response:', incomingRes.data);
+        console.log('[Frontend] Outgoing response:', outgoingRes.data);
 
         if (incomingRes.data?.success) {
-          console.log('🟢 [Frontend] Setting incoming requests:', incomingRes.data.data);
+          console.log('[Frontend] Setting incoming requests:', incomingRes.data.data);
           setIncomingRequests(incomingRes.data.data || []);
         } else {
-          console.log('ℹ️ [Frontend] No incoming requests or endpoint not available');
+          console.log('[Frontend] No incoming requests or endpoint not available');
           setIncomingRequests([]);
         }
 
         if (outgoingRes.data?.success) {
-          console.log('🟢 [Frontend] Setting outgoing requests:', outgoingRes.data.data);
+          console.log('[Frontend] Setting outgoing requests:', outgoingRes.data.data);
           setOutgoingRequests(outgoingRes.data.data || []);
         } else {
-          console.log('ℹ️ [Frontend] No outgoing requests or endpoint not available');
+          console.log('[Frontend] No outgoing requests or endpoint not available');
           setOutgoingRequests([]);
         }
 
       } catch (apiErr: any) {
-        // If we get 401, it's okay - just show empty state
         if (apiErr.response?.status === 401) {
-          console.log('ℹ️ [Frontend] Not authenticated for requests - showing empty state');
+          console.log('[Frontend] Not authenticated for requests - showing empty state');
           setIncomingRequests([]);
           setOutgoingRequests([]);
         } else {
-          throw apiErr; // Re-throw other errors
+          throw apiErr;
         }
       }
 
     } catch (err: any) {
-      console.error('❌ Error fetching requests:', err);
+      console.error('Error fetching requests:', err);
       
-      // Don't show error for 401 - just show empty state
       if (err.response?.status === 401) {
-        console.log('ℹ️ [Frontend] Not authenticated - showing empty state');
+        console.log('[Frontend] Not authenticated - showing empty state');
         setIncomingRequests([]);
         setOutgoingRequests([]);
       } else {
@@ -135,7 +131,6 @@ export default function RequestsPage() {
 
   const fetchAvailableEvents = async () => {
     try {
-      // Try to fetch events - if we get 401, it's okay, we'll show empty state
       const response = await api.get('/events/swappable');
       
       if (response.data && Array.isArray(response.data)) {
@@ -144,18 +139,16 @@ export default function RequestsPage() {
         setAvailableEvents([]);
       }
     } catch (err: any) {
-      console.error('❌ Error fetching available events:', err);
+      console.error('Error fetching available events:', err);
       
-      // If not authenticated, just show empty events
       if (err.response?.status === 401) {
-        console.log('ℹ️ [Frontend] Not authenticated for events - showing empty state');
+        console.log('[Frontend] Not authenticated for events - showing empty state');
         setAvailableEvents([]);
       } else if (err.response?.status === 404) {
-        // No swappable events found - this is normal
-        console.log('ℹ️ [Frontend] No swappable events found (404)');
+        console.log('[Frontend] No swappable events found (404)');
         setAvailableEvents([]);
       } else {
-        console.error('❌ Other error fetching events:', err);
+        console.error('Other error fetching events:', err);
         setAvailableEvents([]);
       }
     }
@@ -175,7 +168,7 @@ export default function RequestsPage() {
         fetchRequests();
       }
     } catch (err: any) {
-      console.error('❌ Error cleaning up test data:', err);
+      console.error('Error cleaning up test data:', err);
       if (err.response?.status === 401) {
         setError('Please log in to perform this action');
       } else {
@@ -185,7 +178,6 @@ export default function RequestsPage() {
   };
 
   const openRequestModal = (event: Event) => {
-    // Check if user is logged in before opening modal
     const token = getStoredToken();
     if (!token) {
       setError('Please log in to request a swap');
@@ -247,7 +239,7 @@ export default function RequestsPage() {
         setError('Failed to send request: ' + response.data.message);
       }
     } catch (err: any) {
-      console.error('❌ Error submitting swap request:', err);
+      console.error('Error submitting swap request:', err);
       if (err.response?.status === 401) {
         setError('Please log in to submit a swap request');
       } else {
@@ -270,7 +262,7 @@ export default function RequestsPage() {
       fetchRequests();
       alert(`Request ${status} successfully!`);
     } catch (err: any) {
-      console.error('❌ Error updating request:', err);
+      console.error('Error updating request:', err);
       if (err.response?.status === 401) {
         setError('Please log in to update requests');
       } else if (err.response?.status === 403) {
@@ -315,11 +307,8 @@ export default function RequestsPage() {
       minute: '2-digit'
     });
   };
-
-  // Check if user is logged in
   const isLoggedIn = isClient && getStoredToken();
 
-  // Show loading state during SSR
   if (!isClient) {
     return (
       <ProtectedRoute>
@@ -358,7 +347,6 @@ export default function RequestsPage() {
       
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="max-w-7xl mx-auto pt-20 px-4 pb-12">
-          {/* Header Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -382,7 +370,6 @@ export default function RequestsPage() {
               Manage your incoming and outgoing shift swap requests
             </p>
             
-            {/* Login Prompt for Non-Logged In Users */}
             {!isLoggedIn && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -407,8 +394,6 @@ export default function RequestsPage() {
               </motion.div>
             )}
           </motion.div>
-
-          {/* Stats Cards - Show even when not logged in */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -477,7 +462,6 @@ export default function RequestsPage() {
             </div>
           </motion.div>
 
-          {/* Error Display */}
           <AnimatePresence>
             {error && (
               <motion.div
@@ -517,7 +501,6 @@ export default function RequestsPage() {
             )}
           </AnimatePresence>
 
-          {/* Tab Navigation */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -549,7 +532,6 @@ export default function RequestsPage() {
             ))}
           </motion.div>
 
-          {/* Content Area */}
           <motion.div
             key={activeTab}
             initial={{ opacity: 0, y: 20 }}
@@ -557,7 +539,6 @@ export default function RequestsPage() {
             transition={{ duration: 0.4 }}
             className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg overflow-hidden"
           >
-            {/* Show login prompt if not logged in */}
             {!isLoggedIn && (
               <div className="p-8 text-center">
                 <div className="bg-blue-50 rounded-2xl p-8 max-w-md mx-auto">
@@ -576,10 +557,8 @@ export default function RequestsPage() {
               </div>
             )}
 
-            {/* Show content only if logged in */}
             {isLoggedIn && (
               <>
-                {/* Incoming Requests */}
                 {activeTab === 'incoming' && (
                   <div className="p-8">
                     <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
@@ -684,7 +663,6 @@ export default function RequestsPage() {
                   </div>
                 )}
 
-                {/* Outgoing Requests Tab */}
                 {activeTab === 'outgoing' && (
                   <div className="p-8">
                     <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
@@ -770,7 +748,6 @@ export default function RequestsPage() {
                   </div>
                 )}
 
-                {/* Request Swap Tab */}
                 {activeTab === 'request' && (
                   <div className="p-8">
                     <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
@@ -834,7 +811,6 @@ export default function RequestsPage() {
           </motion.div>
         </div>
 
-        {/* Swap Request Modal */}
         <AnimatePresence>
           {showRequestModal && selectedEvent && (
             <motion.div
@@ -859,8 +835,6 @@ export default function RequestsPage() {
                       ×
                     </button>
                   </div>
-
-                  {/* Event Details */}
                   <div className="bg-blue-50 rounded-2xl p-6 mb-6 border border-blue-200">
                     <h3 className="font-semibold text-blue-800 mb-3 flex items-center">
                       <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -875,7 +849,6 @@ export default function RequestsPage() {
                     </div>
                   </div>
 
-                  {/* Request Form */}
                   <form onSubmit={handleRequestSubmit} className="space-y-6">
                     <div className="space-y-2">
                       <label className="block text-sm font-semibold text-gray-700">

@@ -67,7 +67,6 @@ export default function Navbar() {
       <nav className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex justify-between items-center py-3">
-            {/* Logo/Brand */}
             <button
               onClick={() => handleNavigation("/dashboard")}
               className="flex items-center space-x-2 group focus:outline-none"
@@ -82,7 +81,6 @@ export default function Navbar() {
               </h1>
             </button>
 
-            {/* Navigation Links */}
             <div className="flex items-center space-x-1 bg-white/10 backdrop-blur-sm rounded-xl p-1 border border-white/20">
               {navItems.map((item) => (
                 <button
@@ -111,10 +109,8 @@ export default function Navbar() {
                 </button>
               ))}
 
-              {/* Separator */}
               <div className="h-6 w-px bg-white/30 mx-1"></div>
               
-              {/* Logout Button */}
               <button
                 onClick={handleLogout}
                 disabled={isLoading}
@@ -143,7 +139,6 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Loading Bar */}
         {isLoading && (
           <div className="w-full h-0.5 bg-blue-400 overflow-hidden">
             <div className="h-full bg-white animate-pulse"></div>

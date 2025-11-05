@@ -24,15 +24,14 @@ export default function EventCard({ event, onToggle }: EventCardProps) {
   }, []);
 
   const handleToggle = () => {
-    console.log("🟡 EventCard: Toggle button clicked for event:", event._id);
-    console.log("🟡 Current swappable status:", event.swappable);
+    console.log("EventCard: Toggle button clicked for event:", event._id);
+    console.log("Current swappable status:", event.swappable);
     
     setIsAnimating(true);
     onToggle(event._id);
     setTimeout(() => setIsAnimating(false), 300);
   };
 
-  // Format dates only on client to avoid hydration issues
   const formatDate = (dateString: string) => {
     if (!isClient) return { date: "", time: "" };
     const date = new Date(dateString);
@@ -54,7 +53,6 @@ export default function EventCard({ event, onToggle }: EventCardProps) {
   const endTime = formatDate(event.endTime);
   const duration = Math.round((new Date(event.endTime).getTime() - new Date(event.startTime).getTime()) / (1000 * 60 * 60));
 
-  // Skeleton loader for SSR
   if (!isClient) {
     return (
       <div className="border border-gray-200 p-4 rounded-lg bg-white shadow-sm animate-pulse">
@@ -78,14 +76,11 @@ export default function EventCard({ event, onToggle }: EventCardProps) {
     `}>
       
       <div className="flex justify-between items-start gap-3">
-        {/* Event Content */}
         <div className="flex-1 min-w-0">
-          {/* Event Title */}
           <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">
             {event.title}
           </h3>
 
-          {/* Date and Time */}
           <div className="flex items-center gap-4 text-sm text-gray-600">
             <div className="flex items-center gap-1">
               <span className="text-gray-400">📅</span>
@@ -103,7 +98,6 @@ export default function EventCard({ event, onToggle }: EventCardProps) {
             </div>
           </div>
 
-          {/* Status Indicator */}
           {event.swappable && (
             <div className="flex items-center gap-1 mt-2">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
@@ -114,7 +108,6 @@ export default function EventCard({ event, onToggle }: EventCardProps) {
           )}
         </div>
 
-        {/* Toggle Button */}
         <button
           onClick={handleToggle}
           disabled={isAnimating}
@@ -150,7 +143,6 @@ export default function EventCard({ event, onToggle }: EventCardProps) {
         </button>
       </div>
 
-      {/* Event ID - Very subtle */}
       {isClient && (
         <p className="text-xs text-gray-400 mt-2 font-mono">
           #{event._id.substring(0, 6)}

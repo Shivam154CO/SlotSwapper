@@ -20,7 +20,7 @@ export default function SignupPage() {
     setError("");
     setLoading(true);
 
-    console.log("🟡 [Frontend] Signup attempt with:", { 
+    console.log("[Frontend] Signup attempt with:", { 
       name: form.name, 
       email: form.email, 
       password: form.password ? "***" : "missing" 
@@ -28,13 +28,13 @@ export default function SignupPage() {
 
     try {
       const res = await api.post("/auth/signup", form);
-      console.log("✅ [Frontend] Signup response:", res.data);
+      console.log("[Frontend] Signup response:", res.data);
 
       if (res.data.success) {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("userId", res.data.user._id);
         
-        console.log("✅ [Frontend] User data saved to localStorage");
+        console.log("[Frontend] User data saved to localStorage");
         
         setTimeout(() => {
           alert("Signup successful!");
@@ -45,8 +45,8 @@ export default function SignupPage() {
       }
 
     } catch (err: any) {
-      console.error("❌ [Frontend] Signup error:", err);
-      console.error("❌ [Frontend] Error response:", err.response?.data);
+      console.error("[Frontend] Signup error:", err);
+      console.error("[Frontend] Error response:", err.response?.data);
       
       const errorMessage = err.response?.data?.msg || 
                           err.response?.data?.message || 
@@ -61,14 +61,13 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 overflow-hidden relative">
-      {/* Animated Background Elements */}
+
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-2000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-indigo-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse animation-delay-4000"></div>
       </div>
 
-      {/* Floating Elements */}
       <div className="absolute top-20 left-10 w-16 h-16 bg-white/10 backdrop-blur-sm rounded-2xl rotate-12 animate-float"></div>
       <div className="absolute top-40 right-20 w-12 h-12 bg-white/10 backdrop-blur-sm rounded-2xl -rotate-12 animate-float animation-delay-1000"></div>
       <div className="absolute bottom-32 left-20 w-14 h-14 bg-white/10 backdrop-blur-sm rounded-2xl rotate-45 animate-float animation-delay-1500"></div>
@@ -80,7 +79,6 @@ export default function SignupPage() {
           transition={{ duration: 0.8 }}
           className="w-full max-w-md"
         >
-          {/* Header */}
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -113,7 +111,6 @@ export default function SignupPage() {
             </motion.p>
           </motion.div>
 
-          {/* Form Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -137,7 +134,6 @@ export default function SignupPage() {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Name Field */}
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -164,7 +160,6 @@ export default function SignupPage() {
                   </div>
                 </motion.div>
 
-                {/* Email Field */}
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -191,7 +186,6 @@ export default function SignupPage() {
                   </div>
                 </motion.div>
 
-                {/* Password Field */}
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -236,7 +230,6 @@ export default function SignupPage() {
                   <p className="text-blue-200/60 text-xs">Must be at least 6 characters long</p>
                 </motion.div>
 
-                {/* Submit Button */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -264,7 +257,6 @@ export default function SignupPage() {
                 </motion.div>
               </form>
 
-              {/* Sign In Link */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}

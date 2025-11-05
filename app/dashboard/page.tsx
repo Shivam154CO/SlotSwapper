@@ -146,7 +146,6 @@ function DashboardContent() {
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="max-w-6xl mx-auto pt-20 px-4">
-          {/* Header Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -170,8 +169,6 @@ function DashboardContent() {
               Manage your events and make them available for swapping with others
             </p>
           </motion.div>
-
-          {/* Stats Cards */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -225,7 +222,6 @@ function DashboardContent() {
             </div>
           </motion.div>
 
-          {/* Add Event Button */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -243,7 +239,6 @@ function DashboardContent() {
             </button>
           </motion.div>
 
-          {/* Add Event Form */}
           <AnimatePresence>
             {showForm && (
               <motion.div
@@ -303,7 +298,6 @@ function DashboardContent() {
             )}
           </AnimatePresence>
 
-          {/* Events Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -360,8 +354,6 @@ function DashboardContent() {
               )}
             </div>
           </motion.div>
-
-          {/* Debug Info - Hidden by default, can be enabled if needed */}
           {process.env.NODE_ENV === 'development' && (
             <div className="mt-6 p-4 bg-gray-100 rounded-lg">
               <p className="text-sm text-gray-600">
