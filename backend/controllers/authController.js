@@ -73,3 +73,66 @@ export const signup = async (req, res) => {
     });
   }
 };
+
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    console.log("🟡 [Login] Attempt for email:", email);
+
+    // Validation
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        msg: "Email and password are required"
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      console.log("❌ [Login] User not found:", email);
+      return res.status(400).json({
+        success: false,
+        msg: "Invalid email or password"
+      });
+    }
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      console.log("❌ [Login] Invalid password for:", email);
+      return res.status(400).json({
+        success: false,
+        msg: "Invalid email or password"
+      });
+    }
+
+    // Generate token
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET || "fallback_secret",
+      { expiresIn: "7d" }
+    );
+
+    console.log("✅ [Login] Successful for:", email);
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email
+      }
+    });
+
+  } catch (err) {
+    console.error("❌ [Login] Server error:", err);
+    res.status(500).json({
+      success: false,
+      msg: "Server error during login",
+      error: err.message
+    });
+  }
+};

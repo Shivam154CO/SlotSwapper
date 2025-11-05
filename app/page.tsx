@@ -15,7 +15,7 @@ export default function Home() {
     <main className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 px-4">
       <div className="text-center max-w-2xl">
         <Image
-          src="/logo.png"
+          src="/slotswap.png"
           alt="SlotSwapper Logo"
           width={100}
           height={100}
