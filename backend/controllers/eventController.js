@@ -1,3 +1,4 @@
+// backend/controllers/eventController.js
 import Event from "../models/Event.js";
 import mongoose from "mongoose";
 
@@ -105,78 +106,38 @@ export const getSwappableEvents = async (req, res) => {
   }
 };
 
-// ✅ Get single event by ID
 export const getEventById = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("[getEventById] Fetching event:", id);
-
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ 
-        success: false,
-        message: "Invalid event ID format" 
-      });
-    }
-
+    console.log("[getEventById] Fetching event with ID:", id);
+    
     const event = await Event.findById(id).populate("userId", "name email");
-
+    
     if (!event) {
-      console.log("[getEventById] Event not found:", id);
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "Event not found" 
+        message: 'Event not found'
       });
     }
-
-    console.log("[getEventById] Event found:", event.title);
-
-    // Format dates properly for the frontend
-    const formatDate = (dateString) => {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    };
-
-    const formatTime = (dateString) => {
-      const date = new Date(dateString);
-      return date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-    };
-
-    // Format the response to match frontend expectations
+    
+    // Format the response similar to getSwappableEvents
     const formattedEvent = {
-      id: event._id.toString(),
+      _id: event._id,
       title: event.title,
-      date: formatDate(event.startTime),
-      time: formatTime(event.startTime),
       startTime: event.startTime,
       endTime: event.endTime,
-      location: "Main Office",
-      description: `Shift from ${formatTime(event.startTime)} to ${formatTime(event.endTime)} on ${formatDate(event.startTime)}`,
       ownerName: event.userId?.name || "Unknown User",
       ownerEmail: event.userId?.email || "No email available",
-      swappable: event.swappable
+      swappable: event.swappable,
     };
-
-    console.log("[getEventById] Formatted event:", formattedEvent);
-
-    res.status(200).json({
-      success: true,
-      data: formattedEvent
-    });
-
-  } catch (err) {
-    console.error("[getEventById] ERROR:", err);
-    res.status(500).json({ 
+    
+    console.log("[getEventById] Found event:", formattedEvent);
+    res.json(formattedEvent);
+  } catch (error) {
+    console.error('Error fetching event:', error);
+    res.status(500).json({
       success: false,
-      message: "Server error while fetching event",
-      error: err.message 
+      message: 'Error fetching event details'
     });
   }
 };

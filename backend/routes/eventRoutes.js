@@ -1,3 +1,4 @@
+// backend/routes/eventRoutes.js
 import express from "express";
 import {
   addEvent,
@@ -83,6 +84,6 @@ router.get("/swappable", getSwappableEvents);
 router.get("/user/:userId", getUserEvents);
 router.patch("/toggle/:id", toggleSwappable);
 router.post("/", addEvent);
-router.get("/:id", getEventById); // This should be LAST
+router.get("/:id", getEventById); // This should be LAST - keep this line!
 
 export default router;

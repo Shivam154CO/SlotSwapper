@@ -22,8 +22,14 @@ export default function Navbar() {
 
       <div className="flex items-center space-x-4">
         <button
+          onClick={() => router.push("/dashboard")}
+          className="hover:underline cursor-pointer"
+        >
+          Dashboard
+        </button>
+        <button
           onClick={() => router.push("/marketplace")}
-          className="hover:underline"
+          className="hover:underline cursor-pointer"
         >
           Marketplace
         </button>
@@ -31,7 +37,7 @@ export default function Navbar() {
           onClick={() => router.push("/requests")}
           className="hover:underline cursor-pointer"
         >
-          Requests
+          My Requests
         </button>
         <button
           onClick={handleLogout}
@@ -39,10 +45,6 @@ export default function Navbar() {
         >
           Logout
         </button>
-
-        <Link href="/requests" className="text-gray-700 hover:text-blue-600">
-  My Requests
-</Link>
       </div>
     </nav>
   );

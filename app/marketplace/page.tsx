@@ -231,18 +231,6 @@ function MarketplaceContent() {
             ))}
           </div>
         )}
-
-        {/* Instructions */}
-        <div className="mt-12 p-6 bg-blue-50 rounded-lg border border-blue-200">
-          <h3 className="text-lg font-semibold text-blue-800 mb-3">How to Request a Swap:</h3>
-          <ol className="list-decimal list-inside space-y-2 text-blue-700">
-            <li>Find an event you want to swap</li>
-            <li>Click the "Request Swap" button</li>
-            <li>Fill out the swap request form with your details</li>
-            <li>Submit the request - the event owner will be notified</li>
-            <li>Check "View My Requests" to see the status of your requests</li>
-          </ol>
-        </div>
       </div>
     </ProtectedRoute>
   );

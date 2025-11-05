@@ -6,13 +6,15 @@ import mongoose from "mongoose";
 export const createSwapRequest = async (req, res) => {
   try {
     const { eventId, reason, preferredDate, preferredTime, contactEmail } = req.body;
+    const userId = req.user?.id; // Get the logged-in user ID
 
     console.log("🟡 [createSwapRequest] Creating swap request:", {
       eventId,
       reason,
       preferredDate,
       preferredTime,
-      contactEmail
+      contactEmail,
+      userId
     });
 
     // Validate required fields
@@ -46,24 +48,25 @@ export const createSwapRequest = async (req, res) => {
       });
     }
 
-    // ✅ SAVE TO DATABASE - Create swap request in MongoDB
+    // ✅ SAVE TO DATABASE - Create swap request with requester ID
     const swapRequest = await SwapRequest.create({
       requestedEvent: eventId,
       eventOwner: requestedEvent.userId._id,
+      requester: userId, // ✅ ADD THE LOGGED-IN USER ID
       message: reason,
       preferredDate: preferredDate,
       preferredTime: preferredTime,
       contactEmail: contactEmail,
-      requesterName: contactEmail.split('@')[0], // Use email username as name
+      requesterName: req.user?.name || contactEmail.split('@')[0],
       requestType: "simple",
       status: "pending"
-      // offeredEvent and requester are optional, so we don't need to provide them
     });
 
     // Populate the response to get event details
     const populatedRequest = await SwapRequest.findById(swapRequest._id)
       .populate("requestedEvent", "title startTime endTime")
-      .populate("eventOwner", "name email");
+      .populate("eventOwner", "name email")
+      .populate("requester", "name email"); // ✅ POPULATE REQUESTER TOO
 
     console.log("✅ [createSwapRequest] Swap request saved to database:", populatedRequest._id);
 
@@ -90,20 +93,22 @@ export const createSwapRequest = async (req, res) => {
 };
 
 // ✅ Get incoming swap requests (requests for my events)
-// ✅ Get incoming swap requests (requests for my events)
 export const getIncomingRequests = async (req, res) => {
   try {
     const userId = req.user.id;
 
     console.log("🟢 [getIncomingRequests] Function called for user:", userId);
-    console.log("🟢 User from token:", req.user);
 
-    const incomingRequests = await SwapRequest.find({ eventOwner: userId })
+    // Find incoming requests where current user is the event owner
+    const incomingRequests = await SwapRequest.find({
+      eventOwner: userId // ✅ Only requests for events YOU own
+    })
       .populate("requestedEvent", "title startTime endTime")
       .populate("eventOwner", "name email")
+      .populate("requester", "name email") // ✅ POPULATE REQUESTER INFO
       .sort({ createdAt: -1 });
 
-    console.log(`✅ [getIncomingRequests] Found ${incomingRequests.length} incoming requests`);
+    console.log(`✅ [getIncomingRequests] Found ${incomingRequests.length} incoming requests for event owner: ${userId}`);
 
     // Format the response
     const formattedRequests = incomingRequests.map(request => ({
@@ -111,7 +116,8 @@ export const getIncomingRequests = async (req, res) => {
       eventTitle: request.requestedEvent?.title,
       eventTime: request.requestedEvent?.startTime,
       requesterEmail: request.contactEmail,
-      requesterName: request.requesterName,
+      requesterName: request.requester?.name || request.requesterName,
+      requesterId: request.requester?._id,
       reason: request.message,
       preferredDate: request.preferredDate,
       preferredTime: request.preferredTime,
@@ -119,8 +125,6 @@ export const getIncomingRequests = async (req, res) => {
       createdAt: request.createdAt,
       requestType: request.requestType
     }));
-
-    console.log("🟢 [getIncomingRequests] Sending response:", formattedRequests);
 
     res.json({
       success: true,
@@ -140,30 +144,23 @@ export const getIncomingRequests = async (req, res) => {
 export const getOutgoingRequests = async (req, res) => {
   try {
     const userId = req.user.id;
+    const userEmail = req.user.email;
 
     console.log("🟢 [getOutgoingRequests] Function called for user:", userId);
-    console.log("🟢 User from token:", req.user);
 
-    // For outgoing requests, we need to find by user email since we don't have user ID in the request
-    // First, let's try to get the user's email from the token or database
-    const userEmail = req.user.email; // This should be available if your auth middleware adds it
-    
-    console.log("🟢 Searching for requests by user email:", userEmail);
-
-    if (!userEmail) {
-      console.log("❌ No user email found in token");
-      return res.json({
-        success: true,
-        data: []
-      });
-    }
-
-    const outgoingRequests = await SwapRequest.find({ contactEmail: userEmail })
+    // Find outgoing requests by USER ID (not just email)
+    const outgoingRequests = await SwapRequest.find({
+      $or: [
+        { requester: userId }, // ✅ PRIMARY: Find by user ID
+        { contactEmail: userEmail } // ✅ SECONDARY: Find by email (backward compatibility)
+      ]
+    })
       .populate("requestedEvent", "title startTime endTime")
       .populate("eventOwner", "name email")
+      .populate("requester", "name email") // ✅ POPULATE REQUESTER INFO
       .sort({ createdAt: -1 });
 
-    console.log(`✅ [getOutgoingRequests] Found ${outgoingRequests.length} outgoing requests`);
+    console.log(`✅ [getOutgoingRequests] Found ${outgoingRequests.length} outgoing requests for user: ${userId}`);
 
     // Format the response
     const formattedRequests = outgoingRequests.map(request => ({
@@ -179,8 +176,6 @@ export const getOutgoingRequests = async (req, res) => {
       createdAt: request.createdAt,
       requestType: request.requestType
     }));
-
-    console.log("🟢 [getOutgoingRequests] Sending response:", formattedRequests);
 
     res.json({
       success: true,
@@ -214,7 +209,8 @@ export const updateRequestStatus = async (req, res) => {
 
     const swapRequest = await SwapRequest.findById(id)
       .populate("requestedEvent")
-      .populate("eventOwner");
+      .populate("eventOwner")
+      .populate("requester", "name email");
 
     if (!swapRequest) {
       return res.status(404).json({ 
@@ -224,12 +220,13 @@ export const updateRequestStatus = async (req, res) => {
     }
 
     // Verify user has permission (event owner can accept/reject)
-    const isEventOwner = swapRequest.eventOwner._id.toString() === userId;
+    const isEventOwnerById = swapRequest.eventOwner?._id?.toString() === userId;
+    const isEventOwnerByEmail = swapRequest.eventOwner?.email === req.user.email;
 
-    if (!isEventOwner) {
+    if (!isEventOwnerById && !isEventOwnerByEmail) {
       return res.status(403).json({ 
         success: false,
-        message: "Not authorized to update this request" 
+        message: "Not authorized to update this request. You are not the event owner."
       });
     }
 
@@ -240,7 +237,8 @@ export const updateRequestStatus = async (req, res) => {
 
     const populatedRequest = await SwapRequest.findById(swapRequest._id)
       .populate("requestedEvent", "title startTime endTime")
-      .populate("eventOwner", "name email");
+      .populate("eventOwner", "name email")
+      .populate("requester", "name email");
 
     res.json({
       success: true,
@@ -257,6 +255,30 @@ export const updateRequestStatus = async (req, res) => {
   }
 };
 
+// Clean up ALL test swap requests
+export const cleanupTestRequests = async (req, res) => {
+  try {
+    console.log("🧹 Cleaning up ALL test swap requests...");
+    
+    // Delete ALL swap requests to completely clean the database
+    const result = await SwapRequest.deleteMany({});
+    
+    console.log(`✅ Deleted ${result.deletedCount} ALL requests from database`);
+    
+    res.json({
+      success: true,
+      message: `Cleaned up ${result.deletedCount} ALL requests from database`,
+      deletedCount: result.deletedCount
+    });
+  } catch (err) {
+    console.error("❌ Error cleaning up test requests:", err);
+    res.status(500).json({
+      success: false,
+      message: "Error cleaning up test requests"
+    });
+  }
+};
+
 // ✅ Get single swap request by ID
 export const getSwapRequest = async (req, res) => {
   try {
@@ -265,7 +287,8 @@ export const getSwapRequest = async (req, res) => {
 
     const swapRequest = await SwapRequest.findById(id)
       .populate("requestedEvent", "title startTime endTime")
-      .populate("eventOwner", "name email");
+      .populate("eventOwner", "name email")
+      .populate("requester", "name email");
 
     if (!swapRequest) {
       return res.status(404).json({

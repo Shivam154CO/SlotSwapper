@@ -14,28 +14,50 @@ export default function SignupPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+// Update your handleSubmit function in signup/page.tsx
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    try {
-      const res = await api.post("/auth/signup", form);
+  console.log("🟡 [Frontend] Signup attempt with:", { 
+    name: form.name, 
+    email: form.email, 
+    password: form.password ? "***" : "missing" 
+  });
 
+  try {
+    const res = await api.post("/auth/signup", form);
+    console.log("✅ [Frontend] Signup response:", res.data);
+
+    if (res.data.success) {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("userId", res.data.user._id);
-
-      router.push("/dashboard");
-setTimeout(() => {
-  alert("Signup successful!");
-}, 200);
-
-    } catch (err: any) {
-      setError(err.response?.data?.msg || "Signup failed. Please try again.");
-    } finally {
-      setLoading(false);
+      
+      console.log("✅ [Frontend] User data saved to localStorage");
+      
+      setTimeout(() => {
+        alert("Signup successful!");
+        router.push("/dashboard");
+      }, 200);
+    } else {
+      throw new Error(res.data.msg || "Signup failed");
     }
-  };
+
+  } catch (err: any) {
+    console.error("❌ [Frontend] Signup error:", err);
+    console.error("❌ [Frontend] Error response:", err.response?.data);
+    
+    const errorMessage = err.response?.data?.msg || 
+                        err.response?.data?.message || 
+                        err.message || 
+                        "Signup failed. Please try again.";
+    
+    setError(errorMessage);
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">

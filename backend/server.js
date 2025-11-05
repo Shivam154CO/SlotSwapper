@@ -5,6 +5,7 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import swapRoutes from "./routes/swapRoutes.js";
+import swapRequestsRoutes from "./routes/swapRequestsRoutes.js"; // ADD THIS IMPORT
 
 dotenv.config();
 
@@ -17,6 +18,8 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/swaps", swapRoutes);
+app.use("/api/swap-requests", swapRequestsRoutes); // ADD THIS LINE - This is what's missing!
+
 app.use((req, res, next) => {
   console.log(`🔍 ${req.method} ${req.url}`);
   console.log(`🔍 Headers:`, req.headers);
@@ -29,6 +32,34 @@ app.get("/api/health", (req, res) => {
     success: true, 
     message: "Server is running!",
     timestamp: new Date().toISOString()
+  });
+});
+app.use((req, res, next) => {
+  console.log(`🔍 ${req.method} ${req.originalUrl}`);
+  console.log('🔍 Registered routes:');
+  console.log('   - /api/auth/*');
+  console.log('   - /api/events/*'); 
+  console.log('   - /api/swaps/*');
+  console.log('   - /api/swap-requests/*');
+  next();
+});
+
+
+// Health check
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ 
+    success: true, 
+    message: "Server is running!",
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 🔍 ADD A TEST ROUTE TO VERIFY swap-requests IS WORKING
+app.get("/api/swap-requests/test", (req, res) => {
+  console.log("✅ /api/swap-requests/test route is working!");
+  res.json({ 
+    message: "Swap requests route is working!",
+    timestamp: new Date() 
   });
 });
 
@@ -46,7 +77,8 @@ const startServer = async () => {
       console.log(`http://localhost:${PORT}/api/events/swappable`);
       console.log(`http://localhost:${PORT}/api/events/debug/all-events`);
       console.log(`http://localhost:${PORT}/api/swaps`);
-      console.log(`http://localhost:${PORT}/api/simple-swaps`); // ADD THIS
+      console.log(`http://localhost:${PORT}/api/swap-requests/incoming`); // ADD THIS
+      console.log(`http://localhost:${PORT}/api/swap-requests/outgoing`); // ADD THIS
     });
   } catch (error) {
     console.error("Failed to start server:", error);

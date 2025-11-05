@@ -1,22 +1,19 @@
 import express from "express";
 import {
   createSwapRequest,
-  getIncomingRequests,
-  getOutgoingRequests,
-  updateRequestStatus,
-  getSwapRequest
+  getSwapRequest,
+  updateRequestStatus
 } from "../controllers/swapController.js";
 import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-// Public routes (no authentication required for creating swap requests)
-router.post("/", createSwapRequest);
+// Create swap request (requires auth to get user ID)
+router.post("/", auth, createSwapRequest);
 
-// Protected routes (authentication required)
+// These routes require authentication
 router.use(auth);
 
-// Parameterized routes - MUST COME LAST
 router.get("/:id", getSwapRequest);
 router.patch("/:id", updateRequestStatus);
 

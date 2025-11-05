@@ -22,17 +22,13 @@ export default function LoginPage() {
   try {
     const res = await api.post("/auth/login", form);
 
-    // ✅ Store both token & userId
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("userId", res.data.user._id);
 
-    // ✅ Navigate first, alert after
     router.push("/dashboard");
 
-    // ✅ Let route finish loading before showing alert
     setTimeout(() => {
-      alert("Login successful!");
-    }, 500); // 0.5s delay ensures navigation happens
+    }, 500);
   } catch (err: any) {
     console.error("Login failed:", err);
     setError(err.response?.data?.msg || "Invalid email or password");
@@ -45,7 +41,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center mb-4">
             <div className="bg-blue-600 p-3 rounded-2xl shadow-lg">
@@ -62,7 +57,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -71,7 +65,6 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium text-gray-700">
                 Email Address
@@ -93,7 +86,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password Field */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label htmlFor="password" className="text-sm font-medium text-gray-700">
@@ -130,7 +122,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Remember Me */}
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -142,7 +133,6 @@ export default function LoginPage() {
               </label>
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
@@ -159,14 +149,12 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Divider */}
           <div className="my-6 flex items-center">
             <div className="flex-1 border-t border-gray-300"></div>
             <span className="px-4 text-sm text-gray-500">or</span>
             <div className="flex-1 border-t border-gray-300"></div>
           </div>
 
-          {/* Signup Link */}
           <div className="text-center">
             <p className="text-gray-600">
               Don't have an account?{" "}
@@ -180,7 +168,6 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* Demo Account Info */}
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-4">
           <h3 className="font-semibold text-blue-900 mb-2 text-center">
             Demo Account
