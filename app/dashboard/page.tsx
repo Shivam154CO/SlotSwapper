@@ -13,7 +13,6 @@ type Event = {
   swappable?: boolean;
 };
 
-// Client component that handles state
 function DashboardContent() {
   const [events, setEvents] = useState<Event[]>([]);
   const [form, setForm] = useState({ title: "", startTime: "", endTime: "" });
@@ -21,45 +20,40 @@ function DashboardContent() {
   const [isClient, setIsClient] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Set client-side flag
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-  // ✅ Load userId from localStorage only on client
   useEffect(() => {
     if (isClient) {
       const storedId = localStorage.getItem("userId");
-      console.log("🟡 Loaded userId from localStorage:", storedId);
+      console.log("Loaded userId from localStorage:", storedId);
       setUserId(storedId);
     }
   }, [isClient]);
 
-  // ✅ Fetch events only when userId is available and on client
   useEffect(() => {
     if (!isClient || !userId) {
-      console.log("🟡 No userId available or not on client, skipping event fetch");
+      console.log("No userId available or not on client, skipping event fetch");
       return;
     }
     
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        console.log("🟡 Fetching events for userId:", userId);
+        console.log("Fetching events for userId:", userId);
         
-        // FIX: Use the correct endpoint - /api/events/user/:userId
         const res = await api.get(`/events/user/${userId}`);
-        console.log("✅ Events fetched successfully:", res.data);
+        console.log("Events fetched successfully:", res.data);
         setEvents(res.data);
       } catch (err: any) {
-        console.error("❌ Error fetching events:", err);
-        console.error("❌ Error status:", err.response?.status);
-        console.error("❌ Error details:", err.response?.data);
+        console.error("Error fetching events:", err);
+        console.error("Error status:", err.response?.status);
+        console.error("Error details:", err.response?.data);
         
-        // Show user-friendly error
         if (err.response?.status === 404) {
-          console.log("ℹ️ No events found for user - this is normal for new users");
-          setEvents([]); // Set empty array instead of showing error
+          console.log("No events found for user - this is normal for new users");
+          setEvents([]);
         }
       } finally {
         setLoading(false);
@@ -68,7 +62,6 @@ function DashboardContent() {
     fetchEvents();
   }, [userId, isClient]);
 
-  // ✅ Add new event
   const addEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId) {
@@ -78,62 +71,57 @@ function DashboardContent() {
 
     try {
       const payload = { ...form, userId };
-      console.log("🟢 Sending event:", payload);
+      console.log("Sending event:", payload);
       const response = await api.post("/events", payload);
-      console.log("✅ Event added successfully:", response.data);
+      console.log("Event added successfully:", response.data);
       alert("Event added successfully!");
       setForm({ title: "", startTime: "", endTime: "" });
 
-      // Refresh events after adding - use the correct endpoint
-      console.log("🟢 Refreshing events list...");
+      console.log("Refreshing events list...");
       const res = await api.get(`/events/user/${userId}`);
-      console.log("✅ Refreshed events:", res.data);
+      console.log("Refreshed events:", res.data);
       setEvents(res.data);
     } catch (err: any) {
-      console.error("❌ Error adding event:", err);
+      console.error("Error adding event:", err);
       console.error("Error details:", err.response?.data);
       alert("Failed to add event. Try again.");
     }
   };
-
-  // ✅ Toggle swappable status with detailed logging
   const toggleSwappable = async (id: string) => {
-    console.log("🔴 toggleSwappable called with id:", id);
-    console.log("🔴 Current userId:", userId);
+    console.log("toggleSwappable called with id:", id);
+    console.log("Current userId:", userId);
     
     if (!id) {
-      console.error("❌ No event ID provided");
+      console.error("No event ID provided");
       alert("No event ID provided");
       return;
     }
 
     if (!userId) {
-      console.error("❌ No user ID available");
+      console.error("No user ID available");
       alert("User not logged in");
       return;
     }
 
     try {
-      console.log("🟢 Making API call to toggle event:", id);
+      console.log("Making API call to toggle event:", id);
       const response = await api.patch(`/events/toggle/${id}`);
-      console.log("✅ Toggle response:", response.data);
+      console.log("Toggle response:", response.data);
 
-      // Refresh events after toggling - use the correct endpoint
-      console.log("🟢 Refreshing events list...");
+      console.log("Refreshing events list...");
       const res = await api.get(`/events/user/${userId}`);
-      console.log("✅ Refreshed events:", res.data);
+      console.log("Refreshed events:", res.data);
       setEvents(res.data);
       
       alert("Event status updated successfully!");
     } catch (err: any) {
-      console.error("❌ Error toggling event:", err);
+      console.error("Error toggling event:", err);
       console.error("Error response:", err.response?.data);
       console.error("Error status:", err.response?.status);
       alert("Failed to toggle event status. Check console for details.");
     }
   };
 
-  // Show loading state during SSR
   if (!isClient) {
     return (
       <ProtectedRoute>
@@ -155,7 +143,6 @@ function DashboardContent() {
       <div className="max-w-3xl mx-auto mt-10 p-4">
         <h1 className="text-3xl font-bold mb-6 text-blue-700">My Schedule</h1>
 
-        {/* Debug Info */}
         <div className="mb-4 p-3 bg-gray-100 rounded-lg">
           <p className="text-sm text-gray-600">
             <strong>Debug Info:</strong> UserID: {userId || "Not set"} | 
@@ -164,7 +151,6 @@ function DashboardContent() {
           </p>
         </div>
 
-        {/* Event Form */}
         <form
           onSubmit={addEvent}
           className="flex flex-col md:flex-row gap-3 mb-6 bg-white p-4 rounded-lg shadow-sm border"
@@ -198,8 +184,6 @@ function DashboardContent() {
             Add Event
           </button>
         </form>
-
-        {/* Loading State */}
         {loading && (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -207,7 +191,6 @@ function DashboardContent() {
           </div>
         )}
 
-        {/* Events List */}
         {!loading && events.length === 0 ? (
           <div className="text-center py-12 bg-gray-50 rounded-lg border">
             <p className="text-gray-500 text-lg mb-2">No events added yet.</p>
@@ -231,7 +214,6 @@ function DashboardContent() {
   );
 }
 
-// Main component
 export default function Dashboard() {
   return <DashboardContent />;
 }
