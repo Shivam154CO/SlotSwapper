@@ -2,22 +2,23 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
-import eventRoutes from "./routes/eventRoutes.js";
-import swapRoutes from "./routes/swapRoutes.js";
+// Import other routes:
+// import eventRoutes from "./routes/eventRoutes.js"; 
+// import swapRoutes from "./routes/swapRoutes.js"; 
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
 
-// ✅ Allowed origins
+// ✅ Allowed origins (FE/Client URLs)
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://slot-swapper1-eight.vercel.app",
-  "https://slotswapper1-fs3l.onrender.com"
+  "https://slot-swapper1-eight.vercel.app", // The client/frontend URL from your logs
+  "https://slotswapper1-fs3l.onrender.com" // The URL of this backend itself
 ];
 
-// ✅ CORS middleware
+// ✅ CORS middleware - Handles the Access-Control-Allow-Origin header
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -26,20 +27,21 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS");
   res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
   res.header("Access-Control-Allow-Credentials", "true");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
+  // CRITICAL: Responds immediately to the preflight OPTIONS request
+  if (req.method === "OPTIONS") return res.sendStatus(200); 
   next();
 });
 
 // ✅ Routes
 app.use("/api/auth", authRoutes);
-app.use("/api/events", eventRoutes);
-app.use("/api/swaps", swapRoutes);
+// app.use("/api/events", eventRoutes);
+// app.use("/api/swaps", swapRoutes);
 
 // ✅ Test route
 app.get("/api/test", (req, res) => {
   res.json({
     success: true,
-    message: "CORS test route working!",
+    message: "Backend test route working!",
     origin: req.get("origin"),
     timestamp: new Date().toISOString()
   });
@@ -51,7 +53,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, msg: err.message });
 });
 
-// ✅ 404
+// ✅ 404 handler
 app.use(/.*/, (req, res) => {
   res.status(404).json({ success: false, msg: `Route ${req.originalUrl} not found` });
 });
@@ -66,8 +68,8 @@ mongoose
     console.log("✅ MongoDB connected");
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
-      console.log("🌐 Allowed origins:");
-      allowedOrigins.forEach((o) => console.log("   -", o));
+      console.log("🌐 Allowed origins (CORS):");
+      allowedOrigins.forEach((o) => console.log("   -", o));
     });
   })
   .catch((err) => {

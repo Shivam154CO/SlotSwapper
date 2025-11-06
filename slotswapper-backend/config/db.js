@@ -5,16 +5,19 @@ dotenv.config();
 
 const connectDB = async () => {
   try {
-    console.log('🔧 Database Configuration:');
-    console.log('   MONGO_URI:', process.env.MONGO_URI ? '✓ Loaded' : '✗ Missing');
-    
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    const MONGO_URI = process.env.MONGO_URI;
+    if (!MONGO_URI) {
+      console.error('❌ MONGO_URI is not defined in .env');
+      throw new Error('MONGO_URI is missing');
+    }
+
+    const conn = await mongoose.connect(MONGO_URI);
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`📊 Database: ${conn.connection.name}`);
     return conn;
   } catch (error) {
     console.error('❌ MongoDB connection error:', error.message);
-    throw error;
+    // Exit process with failure
+    process.exit(1); 
   }
 };
 
