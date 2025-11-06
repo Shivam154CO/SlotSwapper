@@ -5,10 +5,16 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import swapRoutes from "./routes/swapRoutes.js";
-import swapRequestsRoutes from "./routes/swapRequestsRoutes.js"; // ADD THIS IMPORT
+import swapRequestsRoutes from "./routes/swapRequestsRoutes.js";
 
-
+// Load environment variables FIRST
 dotenv.config();
+
+// Debug: Check if environment variables are loading
+console.log("🔧 Environment check:");
+console.log("   MONGODB_URI:", process.env.MONGODB_URI ? "✓ Loaded" : "✗ Missing");
+console.log("   JWT_SECRET:", process.env.JWT_SECRET ? "✓ Loaded" : "✗ Missing");
+console.log("   PORT:", process.env.PORT || 5000);
 
 const app = express();
 
@@ -19,11 +25,11 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/swaps", swapRoutes);
-app.use("/api/swap-requests", swapRequestsRoutes); // ADD THIS LINE - This is what's missing!
+app.use("/api/swap-requests", swapRequestsRoutes);
 
+// Request logging
 app.use((req, res, next) => {
   console.log(`🔍 ${req.method} ${req.url}`);
-  console.log(`🔍 Headers:`, req.headers);
   next();
 });
 
@@ -35,32 +41,29 @@ app.get("/api/health", (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-app.use((req, res, next) => {
-  console.log(`🔍 ${req.method} ${req.originalUrl}`);
-  console.log('🔍 Registered routes:');
-  console.log('   - /api/auth/*');
-  console.log('   - /api/events/*'); 
-  console.log('   - /api/swaps/*');
-  console.log('   - /api/swap-requests/*');
-  next();
-});
 
-
-// Health check
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ 
-    success: true, 
-    message: "Server is running!",
-    timestamp: new Date().toISOString()
-  });
-});
-
-// 🔍 ADD A TEST ROUTE TO VERIFY swap-requests IS WORKING
+// Test route for swap-requests
 app.get("/api/swap-requests/test", (req, res) => {
-  console.log("✅ /api/swap-requests/test route is working!");
   res.json({ 
     message: "Swap requests route is working!",
     timestamp: new Date() 
+  });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).json({ 
+    success: false, 
+    message: 'Internal server error' 
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: 'Route not found: ' + req.originalUrl
   });
 });
 
@@ -71,18 +74,17 @@ const startServer = async () => {
     
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Real API endpoints:`);
-      console.log(`http://localhost:${PORT}/api/health`);
-      console.log(`http://localhost:${PORT}/api/events/test`);
-      console.log(`http://localhost:${PORT}/api/events/swappable`);
-      console.log(`http://localhost:${PORT}/api/events/debug/all-events`);
-      console.log(`http://localhost:${PORT}/api/swaps`);
-      console.log(`http://localhost:${PORT}/api/swap-requests/incoming`); // ADD THIS
-      console.log(`http://localhost:${PORT}/api/swap-requests/outgoing`); // ADD THIS
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📋 Available endpoints:`);
+      console.log(`   http://localhost:${PORT}/api/health`);
+      console.log(`   http://localhost:${PORT}/api/auth/signup`);
+      console.log(`   http://localhost:${PORT}/api/auth/login`);
+      console.log(`   http://localhost:${PORT}/api/events`);
+      console.log(`   http://localhost:${PORT}/api/swaps`);
+      console.log(`   http://localhost:${PORT}/api/swap-requests`);
     });
   } catch (error) {
-    console.error("Failed to start server:", error);
+    console.error("❌ Failed to start server:", error);
     process.exit(1);
   }
 };

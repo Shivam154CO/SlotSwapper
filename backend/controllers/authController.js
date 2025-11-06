@@ -41,7 +41,7 @@ export const signup = async (req, res) => {
     });
 
     const token = jwt.sign(
-      { userId: user._id }, 
+      { id: user._id }, 
       process.env.JWT_SECRET || "fallback_secret",
       { expiresIn: "7d" }
     );
@@ -100,7 +100,7 @@ export const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { userId: user._id },
+      { id: user._id },
       process.env.JWT_SECRET || "fallback_secret",
       { expiresIn: "7d" }
     );
