@@ -188,7 +188,6 @@ const startServer = async () => {
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`📍 Backend URL: https://slotswapper-backend-mgiq.onrender.com`);
   });
 };
 
