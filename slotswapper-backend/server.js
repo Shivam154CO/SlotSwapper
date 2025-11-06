@@ -11,76 +11,67 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-// ✅ Define allowed origins once
+// ✅ Define all allowed origins (local + deployed)
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://slot-swapper1-eight.vercel.app"
+  "https://slot-swapper1-eight.vercel.app",
+  "https://slotswapper1-fs3l.onrender.com" // ✅ your Render frontend domain
 ];
 
-// ✅ Apply CORS before routes
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-  })
-);
+// ✅ Configure CORS properly for Render (must be before routes)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
 
-// ✅ Handle preflight requests (Express 5 compatible)
-app.options(/.*/, cors());
-
-// ✅ Mount routes
+// ✅ Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/swaps", swapRoutes);
 
-// ✅ Health/CORS test
+// ✅ Test route
 app.get("/api/test", (req, res) => {
   res.json({
     success: true,
     message: "CORS test route working!",
+    origin: req.get("origin"),
     timestamp: new Date().toISOString(),
   });
 });
 
-// ✅ Global error handler
+// ✅ Error handler
 app.use((err, req, res, next) => {
-  console.error("Global Error Handler:", err);
-  res.status(500).json({
-    success: false,
-    msg: "Internal Server Error",
-    error: process.env.NODE_ENV === "production" ? undefined : err.message
-  });
+  console.error("Global Error:", err);
+  res.status(500).json({ success: false, msg: err.message });
 });
 
-// ✅ 404 handler (Express 5 safe)
+// ✅ 404 fallback
 app.use(/.*/, (req, res) => {
-  res.status(404).json({
-    success: false,
-    msg: `Route ${req.originalUrl} not found`
-  });
+  res.status(404).json({ success: false, msg: `Route ${req.originalUrl} not found` });
 });
 
-// ✅ Connect MongoDB & start server
-const PORT = process.env.PORT || 5000;
+// ✅ Mongo + Server
+const PORT = process.env.PORT || 10000;
 const MONGO_URI = process.env.MONGO_URI;
 
-const startServer = async () => {
-  try {
-    console.log("🔧 Connecting to MongoDB...");
-    const conn = await mongoose.connect(MONGO_URI);
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`);
-
+mongoose
+  .connect(MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB connected");
     app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
-      console.log("🌐 CORS allowed for:");
-      allowedOrigins.forEach(o => console.log("   -", o));
+      console.log("🌐 Allowed origins:");
+      allowedOrigins.forEach((o) => console.log("   -", o));
     });
-  } catch (error) {
-    console.error("❌ MongoDB connection error:", error.message);
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB connection failed:", err.message);
     process.exit(1);
-  }
-};
-
-startServer();
+  });
