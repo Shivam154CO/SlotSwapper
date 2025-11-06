@@ -13,9 +13,9 @@ app.use(express.json());
 
 // ✅ Allowed origins (FE/Client URLs)
 const allowedOrigins = [
-  "http://localhost:3000",
-  "https://slot-swapper1-eight.vercel.app", // The client/frontend URL from your logs
-  "https://slotswapper1-fs3l.onrender.com" // The URL of this backend itself
+  "http://localhost:3000",                         // <--- MUST BE ADDED FOR LOCAL DEV
+  "https://slot-swapper1-eight.vercel.app",        // <--- Your Vercel deployment
+  "https://slotswapper1-wvsm.onrender.com",
 ];
 
 // ✅ CORS middleware - Handles the Access-Control-Allow-Origin header
