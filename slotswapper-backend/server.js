@@ -1,6 +1,5 @@
 import express from "express";
 import mongoose from "mongoose";
-import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
@@ -11,14 +10,14 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-// ✅ Define all allowed origins (local + deployed)
+// ✅ Allowed origins
 const allowedOrigins = [
   "http://localhost:3000",
   "https://slot-swapper1-eight.vercel.app",
-  "https://slotswapper1-fs3l.onrender.com" // ✅ your Render frontend domain
+  "https://slotswapper1-fs3l.onrender.com"
 ];
 
-// ✅ Configure CORS properly for Render (must be before routes)
+// ✅ CORS middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
@@ -42,7 +41,7 @@ app.get("/api/test", (req, res) => {
     success: true,
     message: "CORS test route working!",
     origin: req.get("origin"),
-    timestamp: new Date().toISOString(),
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -52,12 +51,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, msg: err.message });
 });
 
-// ✅ 404 fallback
+// ✅ 404
 app.use(/.*/, (req, res) => {
   res.status(404).json({ success: false, msg: `Route ${req.originalUrl} not found` });
 });
 
-// ✅ Mongo + Server
+// ✅ Start server
 const PORT = process.env.PORT || 10000;
 const MONGO_URI = process.env.MONGO_URI;
 
