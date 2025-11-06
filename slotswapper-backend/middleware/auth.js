@@ -1,39 +1,80 @@
+import express from "express";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-const auth = async (req, res, next) => {
+const router = express.Router();
+
+// ✅ Signup
+router.post("/signup", async (req, res) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
+    const { name, email, password } = req.body;
+    console.log("[Signup] Data:", { name, email, password: password ? "***" : "missing" });
 
-    if (!token) {
-      return res.status(401).json({ msg: "No token, authorization denied" });
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, msg: "All fields are required" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "fallback_secret");
-    
-    const user = await User.findById(decoded.id).select("-password");
-    
-    if (!user) {
-      return res.status(401).json({ msg: "Token is not valid" });
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, msg: "Password must be at least 6 characters" });
     }
 
-    req.user = {
-      id: user._id.toString(),
-      email: user.email,
-      name: user.name
-    };
-    
-    console.log("Auth middleware - User authenticated:", {
-      id: req.user.id,
-      email: req.user.email,
-      name: req.user.name
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ success: false, msg: "User already exists with this email" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await User.create({ name, email, password: hashedPassword });
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || "fallback_secret",
+      { expiresIn: "7d" }
+    );
+
+    console.log("[Signup] Success:", user.email);
+
+    res.status(201).json({
+      success: true,
+      token,
+      user: { _id: user._id, name: user.name, email: user.email }
     });
-    
-    next();
   } catch (err) {
-    console.error("Auth middleware error:", err);
-    res.status(401).json({ msg: "Token is not valid" });
+    console.error("[Signup] Error:", err);
+    res.status(500).json({ success: false, msg: "Server error during signup" });
   }
-};
+});
 
-export default auth;
+// ✅ Login
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    console.log("[Login] Attempt for:", email);
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ success: false, msg: "Invalid credentials" });
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(400).json({ success: false, msg: "Invalid credentials" });
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET || "fallback_secret",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user: { _id: user._id, name: user.name, email: user.email }
+    });
+  } catch (err) {
+    console.error("[Login] Error:", err);
+    res.status(500).json({ success: false, msg: "Server error during login" });
+  }
+});
+
+export default router;
