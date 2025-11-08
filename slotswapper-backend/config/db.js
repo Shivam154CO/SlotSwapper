@@ -1,12 +1,10 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 
-// Load environment variables
 dotenv.config();
 
 const connectDB = async () => {
   try {
-    // Use MONGO_URI from .env (you have MONGO_URI not MONGODB_URI)
     const mongoURI = process.env.MONGO_URI;
     
     console.log("Database Configuration:");

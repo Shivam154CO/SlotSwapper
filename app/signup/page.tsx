@@ -28,32 +28,20 @@ export default function SignupPage() {
 
     try {
       const res = await api.post("/auth/signup", form);
-      console.log("[Frontend] Full signup response:", res);
-
-      // FIX: Use res directly instead of res.data
       if (res && (res.success || res.token)) {
-        // Save token and user data
         localStorage.setItem("token", res.token);
         localStorage.setItem("userId", res.user?._id);
         localStorage.setItem("userEmail", res.user?.email);
         localStorage.setItem("userName", res.user?.name);
-        
-        console.log("[Frontend] User data saved to localStorage");
-        
-        alert("Signup successful!");
         router.push("/dashboard");
       } else {
-        // Handle unexpected response format
         throw new Error(res.msg || res.message || "Signup failed - invalid response format");
       }
 
     } catch (err: any) {
       console.error("[Frontend] Signup error:", err);
-      
-      // More detailed error handling
       let errorMessage = "Signup failed. Please try again.";
       
-      // FIX: Use err.response directly instead of err.response.data
       if (err.response) {
         errorMessage = err.response.msg || err.response.message || err.message;
       } else if (err.message) {

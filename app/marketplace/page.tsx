@@ -42,8 +42,6 @@ const fetchRealEvents = async (showRefresh = false) => {
     const eventsResponse = await api.get("/events/swappable");
     console.log("REAL Events received:", eventsResponse);
 
-    // FIX: Use eventsResponse directly instead of eventsResponse.data
-    // The backend returns the array directly, not wrapped in a data property
     if (eventsResponse && Array.isArray(eventsResponse)) {
       setEvents(eventsResponse);
     } else {

@@ -90,7 +90,6 @@ export default function RequestsPage() {
         console.log("[Frontend] Incoming response:", incomingRes);
         console.log("[Frontend] Outgoing response:", outgoingRes);
 
-        // FIX: Use incomingRes directly instead of incomingRes.data
         if (incomingRes?.success) {
           console.log(
             "[Frontend] Setting incoming requests:",
@@ -104,7 +103,6 @@ export default function RequestsPage() {
           setIncomingRequests([]);
         }
 
-        // FIX: Use outgoingRes directly instead of outgoingRes.data
         if (outgoingRes?.success) {
           console.log(
             "[Frontend] Setting outgoing requests:",
@@ -148,7 +146,6 @@ export default function RequestsPage() {
       const response = await api.get("/events/swappable");
       console.log("[Frontend] Available events response:", response);
 
-      // FIX: Use response directly instead of response.data
       if (response && Array.isArray(response)) {
         setAvailableEvents(response);
       } else {
@@ -250,7 +247,6 @@ export default function RequestsPage() {
 
       const response = await api.post("/swaps", requestData);
 
-      // FIX: Use response directly instead of response.data
       if (response.success) {
         alert("Swap request sent successfully!");
         closeRequestModal();

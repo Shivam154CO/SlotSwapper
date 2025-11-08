@@ -49,7 +49,6 @@ function DashboardContent() {
         const res = await api.get(`/events/user/${userId}`);
         console.log("Events fetched successfully:", res);
         
-        // Ensure events is always an array
         if (res && Array.isArray(res)) {
           setEvents(res);
         } else {
@@ -154,7 +153,6 @@ function DashboardContent() {
       return;
     }
 
-    // Confirm deletion
     const isConfirmed = window.confirm("Are you sure you want to delete this event? This action cannot be undone.");
     if (!isConfirmed) {
       return;
@@ -164,11 +162,9 @@ function DashboardContent() {
       setDeletingEventId(id);
       console.log("Deleting event with ID:", id);
 
-      // Make DELETE request to your backend API
       const response = await api.delete(`/events/${id}`);
       console.log("Delete response:", response);
 
-      // Remove the event from local state immediately for better UX
       setEvents(prevEvents => prevEvents.filter(event => event._id !== id));
       
       alert("Event deleted successfully!");
@@ -183,7 +179,6 @@ function DashboardContent() {
     }
   };
 
-  // Calculate statistics safely
   const totalEvents = events?.length || 0;
   const swappableCount = events?.filter(e => e.swappable).length || 0;
   const fixedCount = events?.filter(e => !e.swappable).length || 0;

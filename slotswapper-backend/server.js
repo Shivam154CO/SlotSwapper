@@ -11,7 +11,6 @@ dotenv.config();
 
 const app = express();
 
-// CORS configuration for local development
 app.use(cors({
   origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
   credentials: true,
@@ -21,13 +20,11 @@ app.use(cors({
 
 app.use(express.json());
 
-// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/swaps", swapRoutes);
 app.use("/api/swap-requests", swapRequestsRoutes);
 
-// Health check
 app.get("/api/health", (req, res) => {
   res.status(200).json({ 
     success: true, 
@@ -36,7 +33,6 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
   res.status(500).json({ 
@@ -46,7 +42,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({ 
     success: false, 

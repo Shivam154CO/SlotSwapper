@@ -73,9 +73,6 @@ function SwapRequestContent() {
       }
 
       const response = await api.get(`/events/${eventId}`);
-      console.log('Event details response:', response);
-      
-      // FIX: Use response directly instead of response.data
       if (response) {
         setEvent(response);
         const userEmail = localStorage.getItem('userEmail');
@@ -103,7 +100,6 @@ function SwapRequestContent() {
     e.preventDefault();
     
     if (!eventId || !event) {
-      alert('No event selected for swap');
       return;
     }
 
@@ -129,9 +125,6 @@ function SwapRequestContent() {
       console.log('Submitting swap request:', requestData);
       
       const response = await api.post('/swaps', requestData);
-      console.log('Swap request response:', response);
-      
-      // FIX: Use response directly instead of response.data
       if (response.success) {
         alert('Swap request sent successfully!');
         router.push('/requests');
@@ -139,8 +132,6 @@ function SwapRequestContent() {
         setError('Failed to send request: ' + response.message);
       }
     } catch (error: any) {
-      console.error('Error submitting swap request:', error);
-      
       if (error.response?.status === 401) {
         setAuthError(true);
         setError('Your session has expired. Please log in again.');
@@ -519,7 +510,6 @@ function SwapRequestContent() {
   );
 }
 
-// Main component with Suspense boundary
 export default function SwapRequestPage() {
   return (
     <ProtectedRoute>

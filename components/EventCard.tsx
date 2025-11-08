@@ -116,7 +116,6 @@ export default function EventCard({ event, onToggle, onDelete, isDeleting = fals
         </div>
 
         <div className="flex flex-col gap-2">
-          {/* Toggle Button */}
           <button
             onClick={handleToggle}
             disabled={isAnimating || isDeleting}
@@ -151,7 +150,6 @@ export default function EventCard({ event, onToggle, onDelete, isDeleting = fals
             </div>
           </button>
 
-          {/* Delete Button */}
           <button
             onClick={handleDelete}
             disabled={isDeleting}

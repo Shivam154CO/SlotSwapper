@@ -23,8 +23,6 @@ export default function LoginPage() {
     try {
       const res = await api.post("/auth/login", form);
       console.log("[Frontend] Full login response:", res);
-
-      // FIX: Use res directly instead of res.data
       localStorage.setItem("token", res.token);
       localStorage.setItem("userId", res.user._id);
       localStorage.setItem("userEmail", res.user.email);
@@ -36,7 +34,6 @@ export default function LoginPage() {
       }, 500);
     } catch (err: any) {
       console.error("Login failed:", err);
-      // FIX: Use err.response directly instead of err.response.data
       setError(err.response?.msg || "Invalid email or password");
     } finally {
       setLoading(false);
@@ -212,7 +209,7 @@ export default function LoginPage() {
                     className="w-4 h-4 text-green-500 bg-white/5 border-white/10 rounded focus:ring-green-500 focus:ring-offset-transparent"
                   />
                   <label htmlFor="remember" className="ml-2 text-sm text-blue-100">
-                    Remember me for 30 days
+                    Remember me
                   </label>
                 </motion.div>
 
