@@ -28,31 +28,38 @@ function MarketplaceContent() {
     setIsClient(true);
   }, []);
 
-  const fetchRealEvents = async (showRefresh = false) => {
-    try {
-      if (showRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
-      setError(null);
-      
-      console.log("Fetching REAL swappable events from /events/swappable...");
-      
-      const eventsResponse = await api.get("/events/swappable");
-      console.log("REAL Events received:", eventsResponse.data);
-
-      setEvents(eventsResponse.data);
-      
-    } catch (err: any) {
-      console.error("Error fetching real events:", err);
-      console.error("Error details:", err.response?.data);
-      setError(err.response?.data?.msg || err.message || "Failed to load events");
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
+const fetchRealEvents = async (showRefresh = false) => {
+  try {
+    if (showRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
     }
-  };
+    setError(null);
+    
+    console.log("Fetching REAL swappable events from /events/swappable...");
+    
+    const eventsResponse = await api.get("/events/swappable");
+    console.log("REAL Events received:", eventsResponse);
+
+    // FIX: Use eventsResponse directly instead of eventsResponse.data
+    // The backend returns the array directly, not wrapped in a data property
+    if (eventsResponse && Array.isArray(eventsResponse)) {
+      setEvents(eventsResponse);
+    } else {
+      console.log("Unexpected response format, setting empty array");
+      setEvents([]);
+    }
+    
+  } catch (err: any) {
+    console.error("Error fetching real events:", err);
+    console.error("Error details:", err.response?.data);
+    setError(err.response?.data?.msg || err.message || "Failed to load events");
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+};
 
   const debugDatabase = async () => {
     try {

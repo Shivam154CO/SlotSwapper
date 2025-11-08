@@ -22,9 +22,13 @@ export default function LoginPage() {
 
     try {
       const res = await api.post("/auth/login", form);
+      console.log("[Frontend] Full login response:", res);
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("userId", res.data.user._id);
+      // FIX: Use res directly instead of res.data
+      localStorage.setItem("token", res.token);
+      localStorage.setItem("userId", res.user._id);
+      localStorage.setItem("userEmail", res.user.email);
+      localStorage.setItem("userName", res.user.name);
 
       router.push("/dashboard");
 
@@ -32,7 +36,8 @@ export default function LoginPage() {
       }, 500);
     } catch (err: any) {
       console.error("Login failed:", err);
-      setError(err.response?.data?.msg || "Invalid email or password");
+      // FIX: Use err.response directly instead of err.response.data
+      setError(err.response?.msg || "Invalid email or password");
     } finally {
       setLoading(false);
     }

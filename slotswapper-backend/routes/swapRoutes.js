@@ -1,26 +1,18 @@
 import express from "express";
+import {
+  createSwapRequest,
+  getSwapRequest,
+  updateRequestStatus
+} from "../controllers/swapController.js";
+import auth from "../middleware/auth.js";
+
 const router = express.Router();
 
-// Basic placeholder routes (remove the controller imports that don't exist)
-router.post("/", async (req, res) => {
-  res.json({
-    success: true,
-    message: "Create swap request endpoint"
-  });
-});
+router.post("/", auth, createSwapRequest);
 
-router.get("/:id", async (req, res) => {
-  res.json({
-    success: true,
-    message: "Get swap request endpoint"
-  });
-});
+router.use(auth);
 
-router.patch("/:id", async (req, res) => {
-  res.json({
-    success: true,
-    message: "Update swap request status endpoint"
-  });
-});
+router.get("/:id", getSwapRequest);
+router.patch("/:id", updateRequestStatus);
 
 export default router;

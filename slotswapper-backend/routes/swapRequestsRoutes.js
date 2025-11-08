@@ -1,38 +1,26 @@
 import express from "express";
+import {
+  getIncomingRequests,
+  getOutgoingRequests,
+  cleanupTestRequests
+} from "../controllers/swapController.js";
+import auth from "../middleware/auth.js";
+
 const router = express.Router();
 
 router.use((req, res, next) => {
-  console.log(`[swapRequestsRoutes] ${req.method} ${req.path}`);
   next();
 });
 
-// Basic placeholder routes (remove the controller imports that don't exist)
-router.get("/incoming", async (req, res) => {
-  res.json({
-    success: true,
-    message: "Incoming requests endpoint",
-    requests: []
-  });
-});
+router.use(auth);
 
-router.get("/outgoing", async (req, res) => {
-  res.json({
-    success: true,
-    message: "Outgoing requests endpoint",
-    requests: []
-  });
-});
-
-router.delete("/cleanup-test", async (req, res) => {
-  res.json({
-    success: true,
-    message: "Cleanup test endpoint"
-  });
-});
+router.get("/incoming", getIncomingRequests);
+router.get("/outgoing", getOutgoingRequests);
+router.delete("/cleanup-test", cleanupTestRequests);
 
 router.get("/debug/all", async (req, res) => {
   try {
-    const SwapRequest = (await import("../models/SwapRequest.js")).default;
+    const SwapRequest = (await import("../../slotswapper-backend/models/SwapRequest.js")).default;
     const allRequests = await SwapRequest.find({})
       .populate("requestedEvent", "title startTime endTime userId")
       .populate("eventOwner", "name email")

@@ -13,9 +13,11 @@ type Event = {
 type EventCardProps = {
   event: Event;
   onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
+  isDeleting?: boolean;
 };
 
-export default function EventCard({ event, onToggle }: EventCardProps) {
+export default function EventCard({ event, onToggle, onDelete, isDeleting = false }: EventCardProps) {
   const [isClient, setIsClient] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -30,6 +32,11 @@ export default function EventCard({ event, onToggle }: EventCardProps) {
     setIsAnimating(true);
     onToggle(event._id);
     setTimeout(() => setIsAnimating(false), 300);
+  };
+
+  const handleDelete = () => {
+    console.log("EventCard: Delete button clicked for event:", event._id);
+    onDelete(event._id);
   };
 
   const formatDate = (dateString: string) => {
@@ -108,39 +115,69 @@ export default function EventCard({ event, onToggle }: EventCardProps) {
           )}
         </div>
 
-        <button
-          onClick={handleToggle}
-          disabled={isAnimating}
-          className={`
-            relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-            focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]
-            ${event.swappable
-              ? `
-                bg-green-100 text-green-700 border border-green-200
-                hover:bg-green-200 focus:ring-green-300
-              `
-              : `
-                bg-blue-100 text-blue-700 border border-blue-200
-                hover:bg-blue-200 focus:ring-blue-300
-              `
-            }
-            ${isAnimating ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:shadow-sm'}
-          `}
-        >
-          <div className="flex items-center justify-center gap-1.5">
-            {event.swappable ? (
-              <>
-                <span>✅</span>
-                <span>Swappable</span>
-              </>
-            ) : (
-              <>
-                <span>🔄</span>
-                <span>Make Swappable</span>
-              </>
-            )}
-          </div>
-        </button>
+        <div className="flex flex-col gap-2">
+          {/* Toggle Button */}
+          <button
+            onClick={handleToggle}
+            disabled={isAnimating || isDeleting}
+            className={`
+              relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]
+              ${event.swappable
+                ? `
+                  bg-green-100 text-green-700 border border-green-200
+                  hover:bg-green-200 focus:ring-green-300
+                `
+                : `
+                  bg-blue-100 text-blue-700 border border-blue-200
+                  hover:bg-blue-200 focus:ring-blue-300
+                `
+              }
+              ${(isAnimating || isDeleting) ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:shadow-sm'}
+            `}
+          >
+            <div className="flex items-center justify-center gap-1.5">
+              {event.swappable ? (
+                <>
+                  <span>✅</span>
+                  <span>Swappable</span>
+                </>
+              ) : (
+                <>
+                  <span>🔄</span>
+                  <span>Make Swappable</span>
+                </>
+              )}
+            </div>
+          </button>
+
+          {/* Delete Button */}
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className={`
+              relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
+              focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]
+              bg-red-100 text-red-700 border border-red-200
+              hover:bg-red-200 focus:ring-red-300
+              ${isDeleting ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:shadow-sm'}
+            `}
+          >
+            <div className="flex items-center justify-center gap-1.5">
+              {isDeleting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span>Deleting...</span>
+                </>
+              ) : (
+                <>
+                  <span>🗑️</span>
+                  <span>Delete</span>
+                </>
+              )}
+            </div>
+          </button>
+        </div>
       </div>
 
       {isClient && (

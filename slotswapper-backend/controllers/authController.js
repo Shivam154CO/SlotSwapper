@@ -6,10 +6,7 @@ export const signup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    console.log("[Signup] Received data:", { name, email, password: password ? "***" : "missing" });
-
     if (!name || !email || !password) {
-      console.log("[Signup] Missing fields:", { name: !!name, email: !!email, password: !!password });
       return res.status(400).json({
         success: false,
         msg: "All fields are required: name, email, password"
@@ -46,8 +43,6 @@ export const signup = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    console.log("[Signup] User created successfully:", user.email);
-
     res.status(201).json({
       success: true,
       token,
@@ -72,8 +67,6 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    console.log("[Login] Attempt for email:", email);
-
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -83,7 +76,6 @@ export const login = async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) {
-      console.log("[Login] User not found:", email);
       return res.status(400).json({
         success: false,
         msg: "Invalid email or password"
@@ -92,7 +84,6 @@ export const login = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log("[Login] Invalid password for:", email);
       return res.status(400).json({
         success: false,
         msg: "Invalid email or password"
@@ -104,8 +95,6 @@ export const login = async (req, res) => {
       process.env.JWT_SECRET || "fallback_secret",
       { expiresIn: "7d" }
     );
-
-    console.log("[Login] Successful for:", email);
 
     res.json({
       success: true,

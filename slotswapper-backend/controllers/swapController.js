@@ -7,15 +7,6 @@ export const createSwapRequest = async (req, res) => {
     const { eventId, reason, preferredDate, preferredTime, contactEmail } = req.body;
     const userId = req.user?.id;
 
-    console.log("[createSwapRequest] Creating swap request:", {
-      eventId,
-      reason,
-      preferredDate,
-      preferredTime,
-      contactEmail,
-      userId
-    });
-
     if (!eventId || !reason || !preferredDate || !preferredTime || !contactEmail) {
       return res.status(400).json({ 
         success: false,
@@ -37,7 +28,6 @@ export const createSwapRequest = async (req, res) => {
     }
 
     if (!requestedEvent) {
-      console.log("[createSwapRequest] Event not found:", eventId);
       return res.status(404).json({ 
         success: false,
         message: "Event not found" 
@@ -62,8 +52,6 @@ export const createSwapRequest = async (req, res) => {
       .populate("eventOwner", "name email")
       .populate("requester", "name email");
 
-    console.log("[createSwapRequest] Swap request saved to database:", populatedRequest._id);
-
     res.status(201).json({
       success: true,
       message: "Swap request submitted successfully! The event owner will contact you soon.",
@@ -78,7 +66,6 @@ export const createSwapRequest = async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Error creating swap request:", err);
     res.status(500).json({ 
       success: false,
       message: "Server error while creating swap request" 
@@ -90,8 +77,6 @@ export const getIncomingRequests = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    console.log("[getIncomingRequests] Function called for user:", userId);
-
     const incomingRequests = await SwapRequest.find({
       eventOwner: userId
     })
@@ -99,8 +84,6 @@ export const getIncomingRequests = async (req, res) => {
       .populate("eventOwner", "name email")
       .populate("requester", "name email")
       .sort({ createdAt: -1 });
-
-    console.log(`[getIncomingRequests] Found ${incomingRequests.length} incoming requests for event owner: ${userId}`);
 
     const formattedRequests = incomingRequests.map(request => ({
       id: request._id,
@@ -136,7 +119,6 @@ export const getOutgoingRequests = async (req, res) => {
     const userId = req.user.id;
     const userEmail = req.user.email;
 
-    console.log("[getOutgoingRequests] Function called for user:", userId);
 
     const outgoingRequests = await SwapRequest.find({
       $or: [
@@ -148,8 +130,6 @@ export const getOutgoingRequests = async (req, res) => {
       .populate("eventOwner", "name email")
       .populate("requester", "name email")
       .sort({ createdAt: -1 });
-
-    console.log(`[getOutgoingRequests] Found ${outgoingRequests.length} outgoing requests for user: ${userId}`);
 
     const formattedRequests = outgoingRequests.map(request => ({
       id: request._id,
@@ -185,8 +165,6 @@ export const updateRequestStatus = async (req, res) => {
     const { status } = req.body;
     const userId = req.user.id;
 
-    console.log("[updateRequestStatus] Updating request:", { id, status, userId });
-
     if (!["accepted", "rejected", "cancelled"].includes(status)) {
       return res.status(400).json({ 
         success: false,
@@ -219,8 +197,6 @@ export const updateRequestStatus = async (req, res) => {
     swapRequest.status = status;
     await swapRequest.save();
 
-    console.log("[updateRequestStatus] Request status updated to:", status);
-
     const populatedRequest = await SwapRequest.findById(swapRequest._id)
       .populate("requestedEvent", "title startTime endTime")
       .populate("eventOwner", "name email")
@@ -247,8 +223,6 @@ export const cleanupTestRequests = async (req, res) => {
     
     const result = await SwapRequest.deleteMany({});
     
-    console.log(`Deleted ${result.deletedCount} ALL requests from database`);
-    
     res.json({
       success: true,
       message: `Cleaned up ${result.deletedCount} ALL requests from database`,
@@ -266,7 +240,6 @@ export const cleanupTestRequests = async (req, res) => {
 export const getSwapRequest = async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("[getSwapRequest] Fetching swap request:", id);
 
     const swapRequest = await SwapRequest.findById(id)
       .populate("requestedEvent", "title startTime endTime")

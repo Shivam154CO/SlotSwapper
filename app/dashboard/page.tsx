@@ -21,6 +21,7 @@ function DashboardContent() {
   const [isClient, setIsClient] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -46,8 +47,15 @@ function DashboardContent() {
         console.log("Fetching events for userId:", userId);
         
         const res = await api.get(`/events/user/${userId}`);
-        console.log("Events fetched successfully:", res.data);
-        setEvents(res.data);
+        console.log("Events fetched successfully:", res);
+        
+        // Ensure events is always an array
+        if (res && Array.isArray(res)) {
+          setEvents(res);
+        } else {
+          console.log("Unexpected response format, setting empty array");
+          setEvents([]);
+        }
       } catch (err: any) {
         console.error("Error fetching events:", err);
         console.error("Error status:", err.response?.status);
@@ -55,6 +63,8 @@ function DashboardContent() {
         
         if (err.response?.status === 404) {
           console.log("No events found for user - this is normal for new users");
+          setEvents([]);
+        } else {
           setEvents([]);
         }
       } finally {
@@ -82,8 +92,12 @@ function DashboardContent() {
 
       console.log("Refreshing events list...");
       const res = await api.get(`/events/user/${userId}`);
-      console.log("Refreshed events:", res.data);
-      setEvents(res.data);
+      console.log("Refreshed events:", res);
+      if (res && Array.isArray(res)) {
+        setEvents(res);
+      } else {
+        setEvents([]);
+      }
     } catch (err: any) {
       console.error("Error adding event:", err);
       console.error("Error details:", err.response?.data);
@@ -114,8 +128,12 @@ function DashboardContent() {
 
       console.log("Refreshing events list...");
       const res = await api.get(`/events/user/${userId}`);
-      console.log("Refreshed events:", res.data);
-      setEvents(res.data);
+      console.log("Refreshed events:", res);
+      if (res && Array.isArray(res)) {
+        setEvents(res);
+      } else {
+        setEvents([]);
+      }
     } catch (err: any) {
       console.error("Error toggling event:", err);
       console.error("Error response:", err.response?.data);
@@ -123,6 +141,52 @@ function DashboardContent() {
       alert("Failed to toggle event status. Check console for details.");
     }
   };
+
+  const deleteEvent = async (id: string) => {
+    if (!id) {
+      console.error("No event ID provided for deletion");
+      return;
+    }
+
+    if (!userId) {
+      console.error("No user ID available");
+      alert("User not logged in");
+      return;
+    }
+
+    // Confirm deletion
+    const isConfirmed = window.confirm("Are you sure you want to delete this event? This action cannot be undone.");
+    if (!isConfirmed) {
+      return;
+    }
+
+    try {
+      setDeletingEventId(id);
+      console.log("Deleting event with ID:", id);
+
+      // Make DELETE request to your backend API
+      const response = await api.delete(`/events/${id}`);
+      console.log("Delete response:", response);
+
+      // Remove the event from local state immediately for better UX
+      setEvents(prevEvents => prevEvents.filter(event => event._id !== id));
+      
+      alert("Event deleted successfully!");
+
+    } catch (err: any) {
+      console.error("Error deleting event:", err);
+      console.error("Error response:", err.response?.data);
+      console.error("Error status:", err.response?.status);
+      alert("Failed to delete event. Please try again.");
+    } finally {
+      setDeletingEventId(null);
+    }
+  };
+
+  // Calculate statistics safely
+  const totalEvents = events?.length || 0;
+  const swappableCount = events?.filter(e => e.swappable).length || 0;
+  const fixedCount = events?.filter(e => !e.swappable).length || 0;
 
   if (!isClient) {
     return (
@@ -169,6 +233,7 @@ function DashboardContent() {
               Manage your events and make them available for swapping with others
             </p>
           </motion.div>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -183,7 +248,7 @@ function DashboardContent() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">{events.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{totalEvents}</p>
                   <p className="text-gray-600 text-sm">Total Events</p>
                 </div>
               </div>
@@ -197,9 +262,7 @@ function DashboardContent() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {events.filter(e => e.swappable).length}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-900">{swappableCount}</p>
                   <p className="text-gray-600 text-sm">Available for Swap</p>
                 </div>
               </div>
@@ -213,9 +276,7 @@ function DashboardContent() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {events.filter(e => !e.swappable).length}
-                  </p>
+                  <p className="text-2xl font-bold text-gray-900">{fixedCount}</p>
                   <p className="text-gray-600 text-sm">Fixed Events</p>
                 </div>
               </div>
@@ -346,6 +407,8 @@ function DashboardContent() {
                         <EventCard
                           event={event}
                           onToggle={toggleSwappable}
+                          onDelete={deleteEvent}
+                          isDeleting={deletingEventId === event._id}
                         />
                       </motion.div>
                     ))}
@@ -354,6 +417,7 @@ function DashboardContent() {
               )}
             </div>
           </motion.div>
+          
           {process.env.NODE_ENV === 'development' && (
             <div className="mt-6 p-4 bg-gray-100 rounded-lg">
               <p className="text-sm text-gray-600">

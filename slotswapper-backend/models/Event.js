@@ -1,37 +1,12 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const eventSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-    default: "Untitled Event"
-  },
-  startTime: {
-    type: Date,
-    required: true,
-    default: Date.now
-  },
-  endTime: {
-    type: Date,
-    required: true,
-    default: () => new Date(Date.now() + 60 * 60 * 1000) // 1 hour from now
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  swappable: {
-    type: Boolean,
-    default: false
-  },
-  description: {
-    type: String,
-    default: ''
-  }
-}, {
-  timestamps: true
+  title: { type: String, required: true },
+  startTime: { type: Date, required: true },
+  endTime: { type: Date, required: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  swappable: { type: Boolean, default: false },
 });
 
-export default mongoose.model('Event', eventSchema);
+export default mongoose.model("Event", eventSchema);
 

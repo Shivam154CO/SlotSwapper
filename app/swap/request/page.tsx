@@ -21,7 +21,6 @@ const getStoredToken = () => {
   return localStorage.getItem('token');
 };
 
-// Separate component that uses useSearchParams
 function SwapRequestContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -74,10 +73,11 @@ function SwapRequestContent() {
       }
 
       const response = await api.get(`/events/${eventId}`);
-      console.log('Event details response:', response.data);
+      console.log('Event details response:', response);
       
-      if (response.data) {
-        setEvent(response.data);
+      // FIX: Use response directly instead of response.data
+      if (response) {
+        setEvent(response);
         const userEmail = localStorage.getItem('userEmail');
         if (userEmail) {
           setFormData(prev => ({ ...prev, contactEmail: userEmail }));
@@ -92,7 +92,7 @@ function SwapRequestContent() {
         setAuthError(true);
         setError('Your session has expired. Please log in again.');
       } else {
-        setError('Error loading event details: ' + (error.response?.data?.message || error.message));
+        setError('Error loading event details: ' + (error.response?.message || error.message));
       }
     } finally {
       setLoading(false);
@@ -129,13 +129,14 @@ function SwapRequestContent() {
       console.log('Submitting swap request:', requestData);
       
       const response = await api.post('/swaps', requestData);
-      console.log('Swap request response:', response.data);
+      console.log('Swap request response:', response);
       
-      if (response.data.success) {
+      // FIX: Use response directly instead of response.data
+      if (response.success) {
         alert('Swap request sent successfully!');
         router.push('/requests');
       } else {
-        setError('Failed to send request: ' + response.data.message);
+        setError('Failed to send request: ' + response.message);
       }
     } catch (error: any) {
       console.error('Error submitting swap request:', error);
@@ -144,7 +145,7 @@ function SwapRequestContent() {
         setAuthError(true);
         setError('Your session has expired. Please log in again.');
       } else {
-        setError('Failed to send swap request: ' + (error.response?.data?.message || error.message));
+        setError('Failed to send swap request: ' + (error.response?.message || error.message));
       }
     } finally {
       setSubmitting(false);

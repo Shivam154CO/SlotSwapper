@@ -1,78 +1,71 @@
 import express from "express";
-import mongoose from "mongoose";
+import cors from "cors";
 import dotenv from "dotenv";
+import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
-// Import other routes:
-// import eventRoutes from "./routes/eventRoutes.js"; 
-// import swapRoutes from "./routes/swapRoutes.js"; 
+import eventRoutes from "./routes/eventRoutes.js";
+import swapRoutes from "./routes/swapRoutes.js";
+import swapRequestsRoutes from "./routes/swapRequestsRoutes.js";
 
 dotenv.config();
 
 const app = express();
+
+// CORS configuration for local development
+app.use(cors({
+  origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "x-auth-token"]
+}));
+
 app.use(express.json());
 
-// ✅ Allowed origins (FE/Client URLs)
-const allowedOrigins = [
-  "http://localhost:3000",                         // <--- MUST BE ADDED FOR LOCAL DEV
-  "https://slot-swapper1-eight.vercel.app",        // <--- Your Vercel deployment
-  "https://slotswapper1-wvsm.onrender.com",
-];
-
-// ✅ CORS middleware - Handles the Access-Control-Allow-Origin header
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.header("Access-Control-Allow-Origin", origin);
-  }
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,PATCH,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type,Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
-  // CRITICAL: Responds immediately to the preflight OPTIONS request
-  if (req.method === "OPTIONS") return res.sendStatus(200); 
-  next();
-});
-
-// ✅ Routes
+// Routes
 app.use("/api/auth", authRoutes);
-// app.use("/api/events", eventRoutes);
-// app.use("/api/swaps", swapRoutes);
+app.use("/api/events", eventRoutes);
+app.use("/api/swaps", swapRoutes);
+app.use("/api/swap-requests", swapRequestsRoutes);
 
-// ✅ Test route
-app.get("/api/test", (req, res) => {
-  res.json({
-    success: true,
-    message: "Backend test route working!",
-    origin: req.get("origin"),
+// Health check
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ 
+    success: true, 
+    message: "Server is running!",
     timestamp: new Date().toISOString()
   });
 });
 
-// ✅ Error handler
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error("Global Error:", err);
-  res.status(500).json({ success: false, msg: err.message });
-});
-
-// ✅ 404 handler
-app.use(/.*/, (req, res) => {
-  res.status(404).json({ success: false, msg: `Route ${req.originalUrl} not found` });
-});
-
-// ✅ Start server
-const PORT = process.env.PORT || 10000;
-const MONGO_URI = process.env.MONGO_URI;
-
-mongoose
-  .connect(MONGO_URI)
-  .then(() => {
-    console.log("✅ MongoDB connected");
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log("🌐 Allowed origins (CORS):");
-      allowedOrigins.forEach((o) => console.log("   -", o));
-    });
-  })
-  .catch((err) => {
-    console.error("❌ MongoDB connection failed:", err.message);
-    process.exit(1);
+  console.error('Error:', err.stack);
+  res.status(500).json({ 
+    success: false, 
+    message: 'Something went wrong!',
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: `Route ${req.originalUrl} not found` 
+  });
+});
+
+const startServer = async () => {
+  try {
+    await connectDB();
+    
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+};
+
+startServer();
