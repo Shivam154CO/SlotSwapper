@@ -7,15 +7,18 @@ import {
   getEventById,
   deleteEvent
 } from "../controllers/eventController.js";
-
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
+// Apply auth middleware to all routes
+router.use(auth);
+
 router.get("/test", (req, res) => {
-  res.json({ 
-    message: "Events API is working!", 
+  res.json({
+    message: "Events API is working!",
     timestamp: new Date(),
-    route: "/api/events/test" 
+    route: "/api/events/test"
   });
 });
 
@@ -42,10 +45,10 @@ router.get("/debug/all-events", async (req, res) => {
 router.get("/debug/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const Event = (await import("../../slotswapper-backend/models/Event.js")).default;
     const event = await Event.findById(id).populate("userId", "name email");
-    
+
     if (!event) {
       return res.status(404).json({
         success: false,

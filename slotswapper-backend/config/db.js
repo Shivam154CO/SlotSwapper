@@ -7,8 +7,8 @@ const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGO_URI;
     
-    console.log("Database Configuration:");
-    console.log("   MONGO_URI:", mongoURI ? "✓ Loaded" : "✗ Missing");
+    console.log(`[DB] Database Configuration:`);
+    console.log("   MONGO_URI:", mongoURI ? "[OK]" : "[MISSING]");
     
     if (!mongoURI) {
       throw new Error("MONGO_URI is not defined in environment variables");
@@ -21,11 +21,11 @@ const connectDB = async () => {
       useUnifiedTopology: true,
     });
     
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`📊 Database: ${conn.connection.name}`);
+    console.log(`[CONNECTED] MongoDB Connected: ${conn.connection.host}`);
+    console.log(`[DATABASE] Database: ${conn.connection.name}`);
     return conn;
   } catch (error) {
-    console.error("❌ MongoDB connection error:", error.message);
+    console.error("[ERROR] MongoDB connection error:", error.message);
     process.exit(1);
   }
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Calendar, Clock, ArrowRight, Check, RefreshCw, Trash2, AlertCircle } from "lucide-react";
 
 type Event = {
   _id: string;
@@ -26,43 +27,39 @@ export default function EventCard({ event, onToggle, onDelete, isDeleting = fals
   }, []);
 
   const handleToggle = () => {
-    console.log("EventCard: Toggle button clicked for event:", event._id);
-    console.log("Current swappable status:", event.swappable);
-    
     setIsAnimating(true);
     onToggle(event._id);
     setTimeout(() => setIsAnimating(false), 300);
   };
 
   const handleDelete = () => {
-    console.log("EventCard: Delete button clicked for event:", event._id);
     onDelete(event._id);
   };
 
   const formatDate = (dateString: string) => {
-    if (!isClient) return { date: "", time: "" };
+    if (!isClient) return { date: "", time: "", weekday: "" };
     const date = new Date(dateString);
     return {
-      date: date.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
+      date: date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric'
       }),
-      time: date.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
+      time: date.toLocaleTimeString('en-US', {
+        hour: '2-digit',
         minute: '2-digit',
-        hour12: true 
+        hour12: true
       }),
       weekday: date.toLocaleDateString('en-US', { weekday: 'short' })
     };
   };
 
-  const startTime = formatDate(event.startTime);
-  const endTime = formatDate(event.endTime);
+  const start = formatDate(event.startTime);
+  const end = formatDate(event.endTime);
   const duration = Math.round((new Date(event.endTime).getTime() - new Date(event.startTime).getTime()) / (1000 * 60 * 60));
 
   if (!isClient) {
     return (
-      <div className="border border-gray-200 p-4 rounded-lg bg-white shadow-sm animate-pulse">
+      <div className="border border-gray-200 p-4 rounded-xl bg-white shadow-sm animate-pulse">
         <div className="flex justify-between items-start">
           <div className="flex-1 space-y-2">
             <div className="h-5 bg-gray-200 rounded w-3/4"></div>
@@ -76,113 +73,90 @@ export default function EventCard({ event, onToggle, onDelete, isDeleting = fals
 
   return (
     <div className={`
-      border border-gray-200 p-4 rounded-lg bg-white 
+      relative group border p-5 rounded-xl bg-white 
       shadow-sm hover:shadow-md transition-all duration-200
-      ${event.swappable ? 'border-green-200 bg-green-50/30' : ''}
-      ${isAnimating ? 'scale-[0.99]' : ''}
+      ${event.swappable ? 'border-green-200 bg-green-50/10' : 'border-gray-200'}
+      ${isAnimating ? 'scale-[0.99] opacity-90' : ''}
     `}>
-      
-      <div className="flex justify-between items-start gap-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-800 mb-2 line-clamp-2">
-            {event.title}
-          </h3>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
 
-          <div className="flex items-center gap-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
-              <span className="text-gray-400">📅</span>
-              <span className="font-medium">{startTime.weekday}, {startTime.date}</span>
-            </div>
-            
-            <div className="flex items-center gap-1">
-              <span className="text-gray-400">⏰</span>
-              <span>{startTime.time} - {endTime.time}</span>
-            </div>
-            
-            <div className="flex items-center gap-1">
-              <span className="text-gray-400">⏱️</span>
-              <span className="font-medium">{duration}h</span>
-            </div>
+        {/* Event Details */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-gray-900 line-clamp-1 truncate pr-2">
+              {event.title}
+            </h3>
+            {event.swappable && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                Swappable
+              </span>
+            )}
           </div>
 
-          {event.swappable && (
-            <div className="flex items-center gap-1 mt-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-xs text-green-600 font-medium">
-                Available for swap
-              </span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-600">
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-gray-400" />
+              <span className="font-medium">{start.weekday}, {start.date}</span>
             </div>
-          )}
+
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-gray-400" />
+              <span>{start.time}</span>
+              <ArrowRight className="w-3 h-3 text-gray-300" />
+              <span>{end.time}</span>
+            </div>
+
+            <div className="text-xs px-2 py-0.5 bg-gray-100 rounded-md text-gray-500 font-medium hidden sm:inline-block">
+              {duration}h
+            </div>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        {/* Actions */}
+        <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0 pt-3 sm:pt-0 border-t sm:border-0 border-gray-100">
           <button
             onClick={handleToggle}
             disabled={isAnimating || isDeleting}
             className={`
-              relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-              focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]
+              flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all
               ${event.swappable
-                ? `
-                  bg-green-100 text-green-700 border border-green-200
-                  hover:bg-green-200 focus:ring-green-300
-                `
-                : `
-                  bg-blue-100 text-blue-700 border border-blue-200
-                  hover:bg-blue-200 focus:ring-blue-300
-                `
+                ? 'bg-white text-green-700 border border-green-200 hover:bg-green-50'
+                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:text-gray-900'
               }
-              ${(isAnimating || isDeleting) ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:shadow-sm'}
+              disabled:opacity-50 disabled:cursor-not-allowed
             `}
           >
-            <div className="flex items-center justify-center gap-1.5">
-              {event.swappable ? (
-                <>
-                  <span>✅</span>
-                  <span>Swappable</span>
-                </>
-              ) : (
-                <>
-                  <span>🔄</span>
-                  <span>Make Swappable</span>
-                </>
-              )}
-            </div>
+            {event.swappable ? (
+              <>
+                <Check className="w-4 h-4" />
+                <span>Offering Swap</span>
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-4 h-4" />
+                <span>Offer Swap</span>
+              </>
+            )}
           </button>
 
           <button
             onClick={handleDelete}
             disabled={isDeleting}
             className={`
-              relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-              focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[120px]
-              bg-red-100 text-red-700 border border-red-200
-              hover:bg-red-200 focus:ring-red-300
-              ${isDeleting ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer hover:shadow-sm'}
+              flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all
+              bg-white text-gray-400 border border-gray-200 hover:border-red-200 hover:bg-red-50 hover:text-red-600
+              disabled:opacity-50 disabled:cursor-not-allowed
             `}
+            title="Delete Event"
           >
-            <div className="flex items-center justify-center gap-1.5">
-              {isDeleting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Deleting...</span>
-                </>
-              ) : (
-                <>
-                  <span>🗑️</span>
-                  <span>Delete</span>
-                </>
-              )}
-            </div>
+            {isDeleting ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
           </button>
         </div>
       </div>
-
-      {isClient && (
-        <p className="text-xs text-gray-400 mt-2 font-mono">
-          #{event._id.substring(0, 6)}
-        </p>
-      )}
     </div>
   );
 }

@@ -5,6 +5,23 @@ import api from "@/lib/api";
 import Navbar from "@/components/Navbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  RefreshCw,
+  Database,
+  ArrowRight,
+  Lock,
+  ShoppingBag,
+  Users,
+  CheckCircle,
+  Clock,
+  Flame,
+  Bot,
+  Calendar,
+  User,
+  Shuffle,
+  AlertCircle
+} from "lucide-react";
+import DiscoveryToolbar from "@/components/DiscoveryToolbar";
 
 type Event = {
   _id: string;
@@ -24,55 +41,77 @@ function MarketplaceContent() {
   const [isClient, setIsClient] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  const [activeFilters, setActiveFilters] = useState({
+    searchStr: '',
+    duration: 'any',
+    department: 'all',
+    timeOfDay: 'any'
+  });
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'map'>('grid');
+  const [filter, setFilter] = useState<'All' | 'Trending' | 'Smart Match'>('All');
+
+  const filteredEvents = events.filter(event => {
+    // 1. Core Filter (All/Trending/Smart Match)
+    if (filter === 'Trending') {
+      // Mock trending logic
+    }
+
+    // 2. Advanced Filters from Toolbar
+    const matchesSearch = !activeFilters.searchStr ||
+      event.title.toLowerCase().includes(activeFilters.searchStr.toLowerCase()) ||
+      event.ownerName?.toLowerCase().includes(activeFilters.searchStr.toLowerCase()) || false;
+
+    const matchesTime = activeFilters.timeOfDay === 'any' || (() => {
+      const hour = new Date(event.startTime).getHours();
+      if (activeFilters.timeOfDay === 'morning') return hour >= 6 && hour < 12;
+      if (activeFilters.timeOfDay === 'afternoon') return hour >= 12 && hour < 17;
+      if (activeFilters.timeOfDay === 'evening') return hour >= 17;
+      return true;
+    })();
+
+    const matchesDept = activeFilters.department === 'all' || true;
+    const matchesDuration = activeFilters.duration === 'any' || true;
+
+    return matchesSearch && matchesTime && matchesDept && matchesDuration;
+  });
+
   useEffect(() => {
     setIsClient(true);
   }, []);
 
-const fetchRealEvents = async (showRefresh = false) => {
-  try {
-    if (showRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
-    setError(null);
-    
-    console.log("Fetching REAL swappable events from /events/swappable...");
-    
-    const eventsResponse = await api.get("/events/swappable");
-    console.log("REAL Events received:", eventsResponse);
+  const fetchRealEvents = async (showRefresh = false) => {
+    try {
+      if (showRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
 
-    if (eventsResponse && Array.isArray(eventsResponse)) {
-      setEvents(eventsResponse);
-    } else {
-      console.log("Unexpected response format, setting empty array");
-      setEvents([]);
+      console.log("Fetching REAL swappable events...");
+      const eventsResponse = await api.get("/events/swappable");
+
+      if (eventsResponse && Array.isArray(eventsResponse)) {
+        setEvents(eventsResponse);
+      } else {
+        setEvents([]);
+      }
+
+    } catch (err: any) {
+      console.error("Error fetching events:", err);
+      setError(err.response?.data?.msg || err.message || "Failed to load events");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    
-  } catch (err: any) {
-    console.error("Error fetching real events:", err);
-    console.error("Error details:", err.response?.data);
-    setError(err.response?.data?.msg || err.message || "Failed to load events");
-  } finally {
-    setLoading(false);
-    setRefreshing(false);
-  }
-};
+  };
 
   const debugDatabase = async () => {
     try {
-      console.log("Debug: Checking all events in database...");
       const response = await api.get("/events/debug/all-events");
-      console.log("Database debug:", response.data);
-      
-      const totalEvents = response.data.totalEvents;
-      const swappableEvents = response.data.events.filter((e: any) => e.swappable).length;
-      
-      alert(`Database Debug:\nTotal Events: ${totalEvents}\nSwappable Events: ${swappableEvents}\nCheck console for details.`);
-      
+      alert(`Database Debug:\nTotal: ${response.data.totalEvents}`);
     } catch (err) {
-      console.error("Debug failed:", err);
-      alert("Debug failed - check console");
+      alert("Debug failed");
     }
   };
 
@@ -83,22 +122,17 @@ const fetchRealEvents = async (showRefresh = false) => {
   }, [isClient]);
 
   const handleRequestSwap = (event: Event) => {
-    console.log("equesting swap for event:", event);
-    console.log("Event ID:", event._id);
-    
     router.push(`/swap/request?eventId=${event._id}`);
   };
 
-  if (!isClient) {
+  if (!isClient || loading) {
     return (
       <ProtectedRoute>
         <Navbar />
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-          <div className="max-w-7xl mx-auto pt-20 px-4">
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-500 mt-4">Loading marketplace...</p>
-            </div>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <RefreshCw className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-4" />
+            <p className="text-gray-500 font-medium">Loading marketplace...</p>
           </div>
         </div>
       </ProtectedRoute>
@@ -109,271 +143,150 @@ const fetchRealEvents = async (showRefresh = false) => {
     <ProtectedRoute>
       <Navbar />
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="max-w-7xl mx-auto pt-20 px-4">
+      <div className="min-h-screen bg-gray-50 pb-12">
+        <div className="max-w-7xl mx-auto pt-8 px-4 sm:px-6 lg:px-8">
+
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            transition={{ duration: 0.5 }}
+            className="mb-8"
           >
-            <div className="flex items-center justify-center mb-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-blue-600 rounded-2xl rotate-45 w-16 h-16"></div>
-                <div className="relative bg-white p-3 rounded-xl shadow-lg">
-                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-              Swap Marketplace
-            </h1>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Discover available time slots and request swaps with other users
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Marketplace</h1>
+            <p className="text-gray-500 max-w-2xl">
+              Discover available time slots and request swaps with other users.
             </p>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
-          >
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm">
-              <div className="flex items-center">
-                <div className="bg-blue-100 p-3 rounded-xl mr-4">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{events.length}</p>
-                  <p className="text-gray-600 text-sm">Available Slots</p>
-                </div>
-              </div>
-            </div>
+          {/* Discovery Toolbar */}
+          <DiscoveryToolbar
+            onSearch={(newFilters) => setActiveFilters(newFilters)}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+          />
 
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm">
-              <div className="flex items-center">
-                <div className="bg-green-100 p-3 rounded-xl mr-4">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {new Set(events.map(e => e.ownerEmail)).size}
-                  </p>
-                  <p className="text-gray-600 text-sm">Active Users</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm">
-              <div className="flex items-center">
-                <div className="bg-purple-100 p-3 rounded-xl mr-4">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">24/7</p>
-                  <p className="text-gray-600 text-sm">Available</p>
-                </div>
-              </div>
-            </div>
-
-            <div className={`bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm ${
-              loading ? 'bg-yellow-50' : error ? 'bg-red-50' : 'bg-green-50'
-            }`}>
-              <div className="flex items-center">
-                <div className={`p-3 rounded-xl mr-4 ${
-                  loading ? 'bg-yellow-100' : error ? 'bg-red-100' : 'bg-green-100'
-                }`}>
-                  <svg className={`w-6 h-6 ${
-                    loading ? 'text-yellow-600' : error ? 'text-red-600' : 'text-green-600'
-                  }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-lg font-bold text-gray-900">
-                    {loading ? "Loading..." : error ? "Error" : "Live"}
-                  </p>
-                  <p className="text-gray-600 text-sm">Status</p>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-wrap gap-4 justify-center mb-8"
-          >
+          {/* Debug Row */}
+          <div className="flex justify-end mb-6 gap-2">
             <button
               onClick={() => fetchRealEvents(true)}
-              disabled={loading || refreshing}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:transform-none flex items-center space-x-2"
+              disabled={refreshing}
+              className="text-sm text-blue-600 font-medium hover:underline flex items-center gap-1"
             >
-              {refreshing ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Refreshing...</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  <span>Refresh Marketplace</span>
-                </>
-              )}
+              <RefreshCw className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
             </button>
-            
-            <button
-              onClick={debugDatabase}
-              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center space-x-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-              </svg>
-              <span>Debug Database</span>
-            </button>
-
-            <a
-              href="/dashboard"
-              className="bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center space-x-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-              </svg>
-              <span>Go to Dashboard</span>
-            </a>
-          </motion.div>
-
-          <AnimatePresence>
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mb-6 bg-red-50 border border-red-200 rounded-2xl p-6"
-              >
-                <div className="flex items-center">
-                  <svg className="w-6 h-6 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <div>
-                    <h3 className="font-semibold text-red-800">Connection Error</h3>
-                    <p className="text-red-600 text-sm mt-1">{error}</p>
-                  </div>
-                </div>
-              </motion.div>
+            {process.env.NODE_ENV === 'development' && (
+              <button onClick={debugDatabase} className="text-sm text-purple-600 hover:underline">
+                Debug DB
+              </button>
             )}
-          </AnimatePresence>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg overflow-hidden mb-8"
-          >
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Available Time Slots</h2>
-              <p className="text-gray-600 mt-1">Click "Request Swap" to initiate a swap request</p>
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-[500px]">
+            <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <ShoppingBag className="w-5 h-5 text-blue-600" />
+                {activeFilters.searchStr ? 'Search Results' : 'Available Time Slots'}
+              </h2>
+
+              <div className="flex bg-gray-100 p-1 rounded-lg">
+                {['All', 'Trending', 'Smart Match'].map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f as any)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all flex items-center gap-1.5 ${filter === f
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                  >
+                    {f === 'Trending' && <Flame className="w-3.5 h-3.5 text-orange-500" />}
+                    {f === 'Smart Match' && <Bot className="w-3.5 h-3.5 text-indigo-500" />}
+                    {f}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="p-6">
-              {loading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-gray-500 mt-4">Loading available slots...</p>
-                </div>
-              ) : events.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="bg-blue-50 rounded-2xl p-8 max-w-md mx-auto">
-                    <svg className="w-16 h-16 text-blue-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No slots available</h3>
-                    <p className="text-gray-600 mb-4">No one has marked their events as swappable yet.</p>
-                    <div className="bg-white p-4 rounded-lg border text-left">
-                      <p className="text-sm text-gray-600 mb-2">
-                        <strong>To see slots here:</strong>
-                      </p>
-                      <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
-                        <li>Go to your Dashboard</li>
-                        <li>Create events</li>
-                        <li>Mark them as "Swappable"</li>
-                        <li>Ask others to do the same</li>
-                      </ul>
-                    </div>
+              {filteredEvents.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="bg-gray-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <ShoppingBag className="w-8 h-8 text-gray-400" />
                   </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No slots found</h3>
+                  <p className="text-gray-500">Try adjusting your filters or search terms.</p>
                 </div>
               ) : (
-                <AnimatePresence>
-                  <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    {events.map((event, index) => (
+                <div className={`grid gap-6 ${viewMode === 'list' ? 'grid-cols-1' : 'sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+                  <AnimatePresence mode="popLayout">
+                    {filteredEvents.map((event, index) => (
                       <motion.div
+                        layout
                         key={event._id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: index * 0.1 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className={`group relative bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all ${viewMode === 'list' ? 'flex items-center p-4 gap-6' : 'p-5'
+                          }`}
                       >
-                        <div className="p-6">
-                          <div className="flex items-start justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                              {event.title}
-                            </h3>
-                            <div className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
-                              Available
+                        {/* List View Content */}
+                        {viewMode === 'list' ? (
+                          <>
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-900 mb-1">{event.title}</h3>
+                              <div className="flex gap-4 text-sm text-gray-600">
+                                <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(event.startTime).toLocaleDateString()}</span>
+                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                <span className="flex items-center gap-1"><User className="w-3 h-3" /> {event.ownerName}</span>
+                              </div>
                             </div>
-                          </div>
-
-                          <div className="space-y-3 text-sm text-gray-600 mb-4">
-                            <div className="flex items-center">
-                              <svg className="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" />
-                              </svg>
-                              <span><strong>Start:</strong> {new Date(event.startTime).toLocaleString()}</span>
+                            <div className="w-48">
+                              <button
+                                onClick={() => handleRequestSwap(event)}
+                                className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-black font-medium text-sm flex items-center justify-center gap-2"
+                              >
+                                <Shuffle className="w-3 h-3" /> Request Swap
+                              </button>
                             </div>
-                            <div className="flex items-center">
-                              <svg className="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3" />
-                              </svg>
-                              <span><strong>End:</strong> {new Date(event.endTime).toLocaleString()}</span>
+                          </>
+                        ) : (
+                          /* Grid View Content */
+                          <>
+                            <div className="mb-4">
+                              <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 line-clamp-1 mb-1">{event.title}</h3>
+                              <div className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+                                Available
+                              </div>
                             </div>
-                            <div className="flex items-center">
-                              <svg className="w-4 h-4 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                              </svg>
-                              <span><strong>By:</strong> {event.ownerName}</span>
+                            <div className="space-y-2.5 text-sm text-gray-600 mb-5">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-gray-400" />
+                                <span>{new Date(event.startTime).toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Clock className="w-4 h-4 text-gray-400" />
+                                <span>{new Date(event.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(event.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-gray-400" />
+                                <span className="truncate">{event.ownerName}</span>
+                              </div>
                             </div>
-                          </div>
-
-                          <button
-                            onClick={() => handleRequestSwap(event)}
-                            className="w-full bg-gradient-to-r from-green-500 to-blue-600 text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center space-x-2 group-hover:scale-105"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                            </svg>
-                            <span>Request Swap</span>
-                          </button>
-                        </div>
+                            <button
+                              onClick={() => handleRequestSwap(event)}
+                              className="w-full py-2.5 bg-gray-900 text-white rounded-lg hover:bg-black font-medium flex items-center justify-center gap-2"
+                            >
+                              <Shuffle className="w-4 h-4" /> Request Swap
+                            </button>
+                          </>
+                        )}
                       </motion.div>
                     ))}
-                  </div>
-                </AnimatePresence>
+                  </AnimatePresence>
+                </div>
               )}
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </ProtectedRoute>
@@ -383,17 +296,10 @@ const fetchRealEvents = async (showRefresh = false) => {
 export default function Marketplace() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <nav className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 py-4">
-            <h1 className="text-xl font-bold text-blue-600">SlotSwapper</h1>
-          </div>
-        </nav>
-        <div className="max-w-7xl mx-auto pt-20 px-4">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="text-gray-500 mt-4">Loading marketplace...</p>
-          </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-500 font-medium">Loading marketplace...</p>
         </div>
       </div>
     }>

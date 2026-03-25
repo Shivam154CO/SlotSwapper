@@ -4,7 +4,22 @@ import api from "@/lib/api";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import Navbar from "@/components/Navbar";
 import EventCard from "@/components/EventCard";
+import SmartCalendar from "@/components/SmartCalendar";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  Calendar,
+  RefreshCw,
+  Lock,
+  Plus,
+  Trophy,
+  Star,
+  Activity,
+  Zap,
+  Layout,
+  Clock,
+  Trash2,
+  AlertCircle
+} from "lucide-react";
 
 type Event = {
   _id: string;
@@ -12,6 +27,8 @@ type Event = {
   startTime: string;
   endTime: string;
   swappable?: boolean;
+  status?: 'busy' | 'flexible' | 'swappable' | 'high_priority' | 'blocked' | 'ai_optimized';
+  category?: 'work' | 'personal' | 'focus' | 'meeting' | 'other';
 };
 
 function DashboardContent() {
@@ -23,6 +40,14 @@ function DashboardContent() {
   const [showForm, setShowForm] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
 
+  /* State for Gamification */
+  const [userInfo, setUserInfo] = useState({
+    name: "",
+    points: 0,
+    level: 1,
+    badges: [] as string[],
+  });
+
   useEffect(() => {
     setIsClient(true);
   }, []);
@@ -30,8 +55,19 @@ function DashboardContent() {
   useEffect(() => {
     if (isClient) {
       const storedId = localStorage.getItem("userId");
+      const storedName = localStorage.getItem("userName");
+      const storedPoints = parseInt(localStorage.getItem("userPoints") || "0");
+      const storedLevel = parseInt(localStorage.getItem("userLevel") || "1");
+      const storedBadges = JSON.parse(localStorage.getItem("userBadges") || "[]");
+
       console.log("Loaded userId from localStorage:", storedId);
       setUserId(storedId);
+      setUserInfo({
+        name: storedName || "User",
+        points: storedPoints,
+        level: storedLevel,
+        badges: storedBadges
+      });
     }
   }, [isClient]);
 
@@ -40,15 +76,15 @@ function DashboardContent() {
       console.log("No userId available or not on client, skipping event fetch");
       return;
     }
-    
+
     const fetchEvents = async () => {
       try {
         setLoading(true);
         console.log("Fetching events for userId:", userId);
-        
+
         const res = await api.get(`/events/user/${userId}`);
         console.log("Events fetched successfully:", res);
-        
+
         if (res && Array.isArray(res)) {
           setEvents(res);
         } else {
@@ -59,7 +95,7 @@ function DashboardContent() {
         console.error("Error fetching events:", err);
         console.error("Error status:", err.response?.status);
         console.error("Error details:", err.response?.data);
-        
+
         if (err.response?.status === 404) {
           console.log("No events found for user - this is normal for new users");
           setEvents([]);
@@ -85,7 +121,7 @@ function DashboardContent() {
       console.log("Sending event:", payload);
       const response = await api.post("/events", payload);
       console.log("Event added successfully:", response.data);
-      
+
       setForm({ title: "", startTime: "", endTime: "" });
       setShowForm(false);
 
@@ -105,75 +141,33 @@ function DashboardContent() {
   };
 
   const toggleSwappable = async (id: string) => {
-    console.log("toggleSwappable called with id:", id);
-    console.log("Current userId:", userId);
-    
-    if (!id) {
-      console.error("No event ID provided");
-      alert("No event ID provided");
-      return;
-    }
-
-    if (!userId) {
-      console.error("No user ID available");
-      alert("User not logged in");
-      return;
-    }
+    if (!id || !userId) return;
 
     try {
-      console.log("Making API call to toggle event:", id);
-      const response = await api.patch(`/events/toggle/${id}`);
-      console.log("Toggle response:", response.data);
-
-      console.log("Refreshing events list...");
+      await api.patch(`/events/toggle/${id}`);
       const res = await api.get(`/events/user/${userId}`);
-      console.log("Refreshed events:", res);
       if (res && Array.isArray(res)) {
         setEvents(res);
-      } else {
-        setEvents([]);
       }
     } catch (err: any) {
       console.error("Error toggling event:", err);
-      console.error("Error response:", err.response?.data);
-      console.error("Error status:", err.response?.status);
-      alert("Failed to toggle event status. Check console for details.");
+      alert("Failed to toggle event status.");
     }
   };
 
   const deleteEvent = async (id: string) => {
-    if (!id) {
-      console.error("No event ID provided for deletion");
-      return;
-    }
-
-    if (!userId) {
-      console.error("No user ID available");
-      alert("User not logged in");
-      return;
-    }
+    if (!id || !userId) return;
 
     const isConfirmed = window.confirm("Are you sure you want to delete this event? This action cannot be undone.");
-    if (!isConfirmed) {
-      return;
-    }
+    if (!isConfirmed) return;
 
     try {
       setDeletingEventId(id);
-      console.log("Deleting event with ID:", id);
-
-      const response = await api.delete(`/events/${id}`);
-      console.log("Delete response:", response);
-
+      await api.delete(`/events/${id}`);
       setEvents(prevEvents => prevEvents.filter(event => event._id !== id));
-      
-      alert("Event deleted successfully!");
-
     } catch (err: any) {
       console.error("Error deleting event:", err);
-      console.error("Error response:", err.response?.data);
-      console.error("Error status:", err.response?.status);
-      alert("Failed to delete event. Please try again.");
+      alert("Failed to delete event.");
     } finally {
       setDeletingEventId(null);
     }
@@ -183,117 +177,113 @@ function DashboardContent() {
   const swappableCount = events?.filter(e => e.swappable).length || 0;
   const fixedCount = events?.filter(e => !e.swappable).length || 0;
 
-  if (!isClient) {
-    return (
-      <ProtectedRoute>
-        <Navbar />
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-          <div className="max-w-6xl mx-auto pt-20">
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-500 mt-4">Loading dashboard...</p>
-            </div>
-          </div>
-        </div>
-      </ProtectedRoute>
-    );
-  }
+  // Calculate progress to next level
+  const nextLevelPoints = userInfo.level * 100;
+  const progressPercent = Math.min((userInfo.points / nextLevelPoints) * 100, 100);
 
   return (
     <ProtectedRoute>
       <Navbar />
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="max-w-6xl mx-auto pt-20 px-4">
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto pt-8 px-4 sm:px-6 lg:px-8 pb-12">
+
+          {/* Welcome & Gamification Section */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-12"
+            transition={{ duration: 0.5 }}
+            className="mb-8"
           >
-            <div className="flex items-center justify-center mb-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl rotate-45 w-16 h-16"></div>
-                <div className="relative bg-white p-3 rounded-xl shadow-lg">
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm relative overflow-hidden">
+              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+                <div className="text-center md:text-left">
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                    Welcome back, {userInfo.name}
+                  </h1>
+                  <p className="text-gray-500 flex items-center justify-center md:justify-start gap-2">
+                    <Trophy className="w-4 h-4 text-yellow-500" />
+                    Level {userInfo.level} Scheduler • {userInfo.points} Points
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2 justify-center md:justify-start">
+                    {userInfo.badges.length > 0 ? (
+                      userInfo.badges.map((badge, idx) => (
+                        <span key={idx} className="bg-yellow-50 text-yellow-700 text-xs px-3 py-1 rounded-full font-medium border border-yellow-100 flex items-center gap-1">
+                          <Star className="w-3 h-3" /> {badge}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-gray-400 text-sm flex items-center gap-2">
+                        <Activity className="w-4 h-4" /> No badges yet. Start swapping!
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              My Schedule
-            </h1>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Manage your events and make them available for swapping with others
-            </p>
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-          >
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm">
-              <div className="flex items-center">
-                <div className="bg-blue-100 p-3 rounded-xl mr-4">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{totalEvents}</p>
-                  <p className="text-gray-600 text-sm">Total Events</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm">
-              <div className="flex items-center">
-                <div className="bg-green-100 p-3 rounded-xl mr-4">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{swappableCount}</p>
-                  <p className="text-gray-600 text-sm">Available for Swap</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-sm">
-              <div className="flex items-center">
-                <div className="bg-purple-100 p-3 rounded-xl mr-4">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-gray-900">{fixedCount}</p>
-                  <p className="text-gray-600 text-sm">Fixed Events</p>
+                <div className="w-full md:w-1/3 bg-gray-50 rounded-xl p-5 border border-gray-100">
+                  <div className="flex justify-between text-sm font-semibold text-gray-700 mb-2">
+                    <span>Level Progress</span>
+                    <span>{userInfo.points} / {nextLevelPoints} XP</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <motion.div
+                      className="bg-blue-600 h-full rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${progressPercent}%` }}
+                      transition={{ duration: 1, delay: 0.2 }}
+                    ></motion.div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2 text-right">
+                    {nextLevelPoints - userInfo.points} points to next level
+                  </p>
                 </div>
               </div>
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex justify-center mb-8"
-          >
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
+                <Calendar className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{totalEvents}</p>
+                <p className="text-sm text-gray-500 font-medium">Total Events</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-green-50 text-green-600 rounded-lg">
+                <RefreshCw className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{swappableCount}</p>
+                <p className="text-sm text-gray-500 font-medium">For Swap</p>
+              </div>
+            </div>
+
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
+              <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
+                <Lock className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{fixedCount}</p>
+                <p className="text-sm text-gray-500 font-medium">Fixed</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Button */}
+          <div className="flex justify-end mb-6">
             <button
               onClick={() => setShowForm(!showForm)}
-              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center space-x-2"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium shadow-sm transition-all flex items-center gap-2"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span>{showForm ? "Cancel" : "Add New Event"}</span>
+              {showForm ? <Activity className="w-5 h-5 rotate-45" /> : <Plus className="w-5 h-5" />}
+              <span>{showForm ? "Cancel" : "Add Event"}</span>
             </button>
-          </motion.div>
+          </div>
 
           <AnimatePresence>
             {showForm && (
@@ -304,46 +294,49 @@ function DashboardContent() {
                 transition={{ duration: 0.3 }}
                 className="mb-8 overflow-hidden"
               >
-                <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-white/50 shadow-lg">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">Create New Event</h3>
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-blue-600" />
+                    Create New Event
+                  </h3>
                   <form onSubmit={addEvent} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">Event Title</label>
+                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">Event Title</label>
                         <input
                           type="text"
-                          placeholder="Meeting, Class, Appointment..."
+                          placeholder="Meeting, Class..."
                           value={form.title}
                           onChange={(e) => setForm({ ...form, title: e.target.value })}
-                          className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                           required
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">Start Time</label>
+                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">Start Time</label>
                         <input
                           type="datetime-local"
                           value={form.startTime}
                           onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-                          className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                           required
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-700 mb-2 block">End Time</label>
+                        <label className="text-sm font-medium text-gray-700 mb-1.5 block">End Time</label>
                         <input
                           type="datetime-local"
                           value={form.endTime}
                           onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-                          className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          className="w-full border border-gray-300 rounded-lg p-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                           required
                         />
                       </div>
                     </div>
-                    <div className="flex justify-end">
+                    <div className="flex justify-end pt-2">
                       <button
                         type="submit"
-                        className="bg-gradient-to-r from-green-500 to-blue-600 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300"
+                        className="bg-gray-900 hover:bg-black text-white px-6 py-2.5 rounded-lg font-medium shadow-sm transition-all"
                       >
                         Create Event
                       </button>
@@ -354,74 +347,75 @@ function DashboardContent() {
             )}
           </AnimatePresence>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="bg-white/80 backdrop-blur-sm rounded-2xl border border-white/50 shadow-lg overflow-hidden"
-          >
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Your Events</h2>
-              <p className="text-gray-600 mt-1">Manage and toggle swap availability</p>
+          {/* Smart Calendar Integration */}
+          <div className="mb-12">
+            <SmartCalendar
+              events={events}
+              onAddEvent={(date) => {
+                setForm({ ...form, startTime: date.toISOString().slice(0, 16) });
+                setShowForm(true);
+              }}
+              onEventClick={(event) => {
+                // Future: Open edit modal
+                console.log("Clicked event:", event);
+              }}
+            />
+          </div>
+
+          {/* Legacy List View (Optional - can be toggled or removed) */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-[400px] mt-8">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h2 className="text-xl font-bold text-gray-900">All Events List</h2>
+              <div className="text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                {events.length} events found
+              </div>
             </div>
 
             <div className="p-6">
               {loading && (
                 <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="text-gray-500 mt-4">Loading events...</p>
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="text-gray-500 mt-4 text-sm">Loading events...</p>
                 </div>
               )}
 
-              {!loading && events.length === 0 ? (
+              {!loading && events.length === 0 && (
                 <div className="text-center py-16">
-                  <div className="bg-blue-50 rounded-2xl p-8 max-w-md mx-auto">
-                    <svg className="w-16 h-16 text-blue-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">No events yet</h3>
-                    <p className="text-gray-600 mb-6">Get started by creating your first event!</p>
-                    <button
-                      onClick={() => setShowForm(true)}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300"
-                    >
-                      Create Your First Event
-                    </button>
+                  <div className="bg-gray-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <Calendar className="w-8 h-8 text-gray-400" />
                   </div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">No events yet</h3>
+                  <p className="text-gray-500 mb-6 max-w-sm mx-auto">Get started by creating your first event to start swapping slots with others.</p>
+                  <button
+                    onClick={() => setShowForm(true)}
+                    className="text-blue-600 font-medium hover:text-blue-700 hover:underline"
+                  >
+                    Create Your First Event
+                  </button>
                 </div>
-              ) : (
-                <AnimatePresence>
-                  <div className="space-y-4">
-                    {events.map((event, index) => (
-                      <motion.div
-                        key={event._id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4, delay: index * 0.1 }}
-                      >
-                        <EventCard
-                          event={event}
-                          onToggle={toggleSwappable}
-                          onDelete={deleteEvent}
-                          isDeleting={deletingEventId === event._id}
-                        />
-                      </motion.div>
-                    ))}
-                  </div>
-                </AnimatePresence>
+              )}
+
+              {!loading && events.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {events.map((event) => (
+                    <motion.div
+                      key={event._id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      layout
+                    >
+                      <EventCard
+                        event={event}
+                        onToggle={toggleSwappable}
+                        onDelete={deleteEvent}
+                        isDeleting={deletingEventId === event._id}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
               )}
             </div>
-          </motion.div>
-          
-          {process.env.NODE_ENV === 'development' && (
-            <div className="mt-6 p-4 bg-gray-100 rounded-lg">
-              <p className="text-sm text-gray-600">
-                <strong>Debug Info:</strong> UserID: {userId || "Not set"} | 
-                Events Count: {events.length} | 
-                Status: {loading ? "Loading..." : "Ready"}
-              </p>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </ProtectedRoute>

@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "checkJs": false,
+    "outDir": "./dist",
+    "rootDir": "./",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true
+  },
+  "include": ["**/*.ts", "server.js", "middleware/**/*.js", "routes/**/*.js", "controllers/**/*.js", "models/**/*.js", "services/**/*.js", "sockets/**/*.js", "utils/**/*.js", "config/**/*.js"],
+  "exclude": ["node_modules", "dist"]
+}
